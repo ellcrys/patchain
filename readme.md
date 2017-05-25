@@ -4,7 +4,7 @@ Patchain (a.k.a Partition Chain) is a tamper-resistant data model that ensures d
 
 Patchain defers from the traditional blockchain design in that it is meant to be used on centralized/distributed environment and designed on traditional ACID-complaint databases. It does not organize objects into blocks but into logical units known as a `Partition`.
 
-A Partition is a logical collection of objects that are linked together. The first object of a partition references the hash of the partition and the next references the hash of the object before it. For improved performance and reduction in lock contention during chaining, systems making use of this model will need to create multiple partitions to improve through-put. A system composed of multiple partitons will have all partitions linked to each other thereby forming a chain and "tamper-proofness" of data. 
+A Partition is a logical collection of objects that are linked together. The first object of a partition references the hash of the partition and the next references the hash of the object before it. For improved performance and reduction in lock contention during chaining, systems making use of this model will need to create multiple partitions to improve write through-put. A system composed of multiple partitions will also have all partitions linked to each other.
 
 ![Patchain Illustrated](https://storage.googleapis.com/krogan/patchain_img.png)
 
