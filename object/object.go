@@ -50,23 +50,23 @@ func (o *Object) CreateOnce(obj *tables.Object) error {
 // partition's prev hash value.
 func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ...patchain.Option) ([]*tables.Object, error) {
 
-	// process options
-	dbTx := o.db.Begin()
-	dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
-	finish := true
-	if len(options) > 0 {
-		dbOptions = options
-		for _, ops := range options {
-			if ops.GetName() == patchain.UseDBOptionName {
-				dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
-				finish = ops.(*patchain.UseDBOption).Finish
-			}
-		}
-	}
-
 	// Process starts a transaction to create the partition(s). It can be called multiple times when
 	// a retry error is returned or a unique constraint error occurs on the prev_hash field
 	var process = func() ([]*tables.Object, error) {
+
+		// process options
+		dbTx := o.db.Begin()
+		dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
+		finish := true
+		if len(options) > 0 {
+			dbOptions = options
+			for _, ops := range options {
+				if ops.GetName() == patchain.UseDBOptionName {
+					dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
+					finish = ops.(*patchain.UseDBOption).Finish
+				}
+			}
+		}
 
 		partitions := []*tables.Object{}
 
@@ -183,24 +183,25 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 		}
 	}
 
-	// process options
-	dbTx := o.db.Begin()
-	dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
-	finish := true
-	if len(options) > 0 {
-		dbOptions = options
-		for _, ops := range options {
-			if ops.GetName() == patchain.UseDBOptionName {
-				dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
-				finish = ops.(*patchain.UseDBOption).Finish
-			}
-		}
-	}
-
 	// define function to perform put operation. May be repeated if the following conditions occur:
 	// - Error indicating a restart or retry the transaction
 	// - Error indicating a previous hash unique index violation
 	var putTxFunc = func() error {
+
+		// process options
+		dbTx := o.db.Begin()
+		dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
+		finish := true
+		if len(options) > 0 {
+			dbOptions = options
+			for _, ops := range options {
+				if ops.GetName() == patchain.UseDBOptionName {
+					dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
+					finish = ops.(*patchain.UseDBOption).Finish
+				}
+			}
+		}
+
 		return o.db.TransactWithDB(dbTx, finish, func(dbTx patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
 
 			// get the partitions belonging to the owner of the object
