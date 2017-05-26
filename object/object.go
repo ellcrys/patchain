@@ -106,6 +106,22 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 	return partitions, errors.Wrap(err, "failed to create partition(s)")
 }
 
+// Retry runs an operation if it fails dues to a retry or prev_hash contention error
+func (o *Object) Retry(cb func(stop func()) error) error {
+	var err error
+	c := redo.NewDefaultBackoffConfig()
+	c.MaxElapsedTime = 10 * time.Minute
+	err = redo.NewRedo().BackOff(c, func(stop func()) error {
+		err = cb(stop)
+		if err != nil && o.RequiresRetry(err) {
+			return err
+		}
+		stop()
+		return err
+	})
+	return err
+}
+
 // MustCreatePartitions is the same as CreatePartitions but it will retry the operation
 // if it fails because of a transaction retry or contention error. The retry will continue
 // to happen for max of 10 minutes using an exponential backoff algorithm.
@@ -114,16 +130,9 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 func (o *Object) MustCreatePartitions(n int64, ownerID, creatorID string, options ...patchain.Option) ([]*tables.Object, error) {
 	var partitions []*tables.Object
 	var err error
-	c := redo.NewDefaultBackoffConfig()
-	c.MaxElapsedTime = 10 * time.Minute
-	err = redo.NewRedo().BackOff(c, func(stop func()) error {
-		var err error
+	err = o.Retry(func(stop func()) error {
 		partitions, err = o.CreatePartitions(n, ownerID, creatorID, options...)
 		if err != nil {
-			if o.RequiresRetry(err) {
-				return err
-			}
-			stop()
 			return err
 		}
 		return nil
@@ -180,16 +189,9 @@ func (o *Object) RequiresRetry(err error) bool {
 // fails, it will not be retried
 func (o *Object) MustPut(objs interface{}, options ...patchain.Option) error {
 	var err error
-	c := redo.NewDefaultBackoffConfig()
-	c.MaxElapsedTime = 10 * time.Minute
-	err = redo.NewRedo().BackOff(c, func(stop func()) error {
-		var err error
+	err = o.Retry(func(stop func()) error {
 		err = o.Put(objs, options...)
 		if err != nil {
-			if o.RequiresRetry(err) {
-				return err
-			}
-			stop()
 			return err
 		}
 		return nil
