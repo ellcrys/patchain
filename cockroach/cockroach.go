@@ -161,7 +161,7 @@ func (c *DB) CreateBulk(objs []interface{}, options ...patchain.Option) error {
 
 // Begin returns a database object with an active transaction session
 func (c *DB) Begin() patchain.DB {
-	return &DB{db: c.db.Begin()}
+	return &DB{db: c.db.NewScope(nil).DB().Begin()}
 }
 
 // Transact starts a transaction. It returns a CommitFunc and a RollbackFunc for
