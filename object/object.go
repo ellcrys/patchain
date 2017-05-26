@@ -2,6 +2,7 @@ package object
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/copier"
@@ -133,6 +134,15 @@ func (o *Object) selectPartition(partitions []*tables.Object) *tables.Object {
 	} else {
 		return partitions[util.RandNum(0, len(partitions)-1)]
 	}
+}
+
+// RequiresRetry checks whether a transaction error
+// indicates or requires a retry. This method can detect cockroach db
+// restart, retry error and prev hash contention
+func (o *Object) RequiresRetry(err error) bool {
+	return strings.Contains(err.Error(), "restart transaction") ||
+		strings.Contains(err.Error(), "retry transaction") ||
+		strings.Contains(err.Error(), `violates unique constraint "idx_name_prev_hash"`)
 }
 
 // Put adds an object into a randomly selected partition belonging to
