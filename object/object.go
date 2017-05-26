@@ -1,9 +1,6 @@
 package object
 
 import (
-	"strings"
-	"time"
-
 	"fmt"
 
 	"github.com/ellcrys/util"
@@ -11,7 +8,6 @@ import (
 	"github.com/ncodes/cocoon/core/common"
 	"github.com/ncodes/patchain"
 	"github.com/ncodes/patchain/cockroach/tables"
-	"github.com/ncodes/redo"
 	"github.com/pkg/errors"
 )
 
@@ -50,23 +46,24 @@ func (o *Object) CreateOnce(obj *tables.Object) error {
 // partition's prev hash value.
 func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ...patchain.Option) ([]*tables.Object, error) {
 
+	// process options
+	dbTx := o.db.Begin()
+	dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
+	finish := true
+	if len(options) > 0 {
+		dbOptions = options
+		for _, ops := range options {
+			if ops.GetName() == patchain.UseDBOptionName {
+				dbOpt := ops.(*patchain.UseDBOption)
+				dbTx = dbOpt.GetValue().(patchain.DB)
+				finish = dbOpt.Finish
+			}
+		}
+	}
+
 	// Process starts a transaction to create the partition(s). It can be called multiple times when
 	// a retry error is returned or a unique constraint error occurs on the prev_hash field
 	var process = func() ([]*tables.Object, error) {
-
-		// process options
-		dbTx := o.db.Begin()
-		dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
-		finish := true
-		if len(options) > 0 {
-			dbOptions = options
-			for _, ops := range options {
-				if ops.GetName() == patchain.UseDBOptionName {
-					dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
-					finish = ops.(*patchain.UseDBOption).Finish
-				}
-			}
-		}
 
 		partitions := []*tables.Object{}
 
@@ -101,23 +98,7 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 		})
 	}
 
-	var partitions []*tables.Object
-	c := redo.NewDefaultBackoffConfig()
-	c.MaxElapsedTime = 10 * time.Minute
-	err := redo.NewRedo().BackOff(c, func(stop func()) error {
-		var err error
-		partitions, err = process()
-		if err != nil {
-			if strings.Contains(err.Error(), "restart transaction") ||
-				strings.Contains(err.Error(), "retry transaction") ||
-				strings.Contains(err.Error(), `violates unique constraint "idx_name_prev_hash"`) {
-				return err
-			}
-			stop()
-			return err
-		}
-		return nil
-	})
+	partitions, err := process()
 
 	return partitions, errors.Wrap(err, "failed to create partition(s)")
 }
@@ -183,24 +164,24 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 		}
 	}
 
+	// process options
+	dbTx := o.db.Begin()
+	dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
+	finish := true
+	if len(options) > 0 {
+		dbOptions = options
+		for _, ops := range options {
+			if ops.GetName() == patchain.UseDBOptionName {
+				dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
+				finish = ops.(*patchain.UseDBOption).Finish
+			}
+		}
+	}
+
 	// define function to perform put operation. May be repeated if the following conditions occur:
 	// - Error indicating a restart or retry the transaction
 	// - Error indicating a previous hash unique index violation
 	var putTxFunc = func() error {
-
-		// process options
-		dbTx := o.db.Begin()
-		dbOptions := []patchain.Option{&patchain.UseDBOption{DB: dbTx}}
-		finish := true
-		if len(options) > 0 {
-			dbOptions = options
-			for _, ops := range options {
-				if ops.GetName() == patchain.UseDBOptionName {
-					dbTx = ops.(*patchain.UseDBOption).GetValue().(patchain.DB)
-					finish = ops.(*patchain.UseDBOption).Finish
-				}
-			}
-		}
 
 		return o.db.TransactWithDB(dbTx, finish, func(dbTx patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
 
@@ -251,21 +232,7 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 		})
 	}
 
-	c := redo.NewDefaultBackoffConfig()
-	c.MaxElapsedTime = 10 * time.Minute
-	err := redo.NewRedo().BackOff(c, func(stop func()) error {
-		err := putTxFunc()
-		if err != nil {
-			if strings.Contains(err.Error(), "restart transaction") ||
-				strings.Contains(err.Error(), "retry transaction") ||
-				strings.Contains(err.Error(), `violates unique constraint "idx_name_prev_hash"`) {
-				return err
-			}
-			stop()
-			return err
-		}
-		return nil
-	})
+	err := putTxFunc()
 
 	return errors.Wrap(err, "failed to put object(s)")
 }
