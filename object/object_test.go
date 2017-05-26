@@ -125,6 +125,15 @@ func TestObject(t *testing.T) {
 				})
 			})
 
+			Convey(".RequiresRetry", func() {
+				err := fmt.Errorf(`pq: duplicate key value (prev_hash)=('stuff') violates unique constraint "idx_name_prev_hash"`)
+				So(obj.RequiresRetry(err), ShouldEqual, true)
+				err = fmt.Errorf(`pq: some text retry transaction`)
+				So(obj.RequiresRetry(err), ShouldEqual, true)
+				err = fmt.Errorf(`pq: some text restart transaction`)
+				So(obj.RequiresRetry(err), ShouldEqual, true)
+			})
+
 			Convey(".CreatePartitions", func() {
 
 				Convey("Should successfully create initial partitions", func() {

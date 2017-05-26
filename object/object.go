@@ -3,12 +3,14 @@ package object
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/copier"
 	"github.com/ncodes/cocoon/core/common"
 	"github.com/ncodes/patchain"
 	"github.com/ncodes/patchain/cockroach/tables"
+	"github.com/ncodes/redo"
 	"github.com/pkg/errors"
 )
 
@@ -104,6 +106,31 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 	return partitions, errors.Wrap(err, "failed to create partition(s)")
 }
 
+// MustCreatePartitions is the same as CreatePartitions but it will retry the operation
+// if it fails because of a transaction retry or contention error. The retry will continue
+// to happen for max of 10 minutes using an exponential backoff algorithm.
+// Note: if an external database connection is passed using the db option and a transaction
+// fails, it will not be retried
+func (o *Object) MustCreatePartitions(n int64, ownerID, creatorID string, options ...patchain.Option) ([]*tables.Object, error) {
+	var partitions []*tables.Object
+	var err error
+	c := redo.NewDefaultBackoffConfig()
+	c.MaxElapsedTime = 10 * time.Minute
+	err = redo.NewRedo().BackOff(c, func(stop func()) error {
+		var err error
+		partitions, err = o.CreatePartitions(n, ownerID, creatorID, options...)
+		if err != nil {
+			if o.RequiresRetry(err) {
+				return err
+			}
+			stop()
+			return err
+		}
+		return nil
+	})
+	return partitions, err
+}
+
 // GetLast gets the latest version of an object.
 // It does this by enforcing a descending order of the insert timestamp of the object.
 func (o *Object) GetLast(q patchain.Query, options ...patchain.Option) (*tables.Object, error) {
@@ -143,6 +170,31 @@ func (o *Object) RequiresRetry(err error) bool {
 	return strings.Contains(err.Error(), "restart transaction") ||
 		strings.Contains(err.Error(), "retry transaction") ||
 		strings.Contains(err.Error(), `violates unique constraint "idx_name_prev_hash"`)
+}
+
+// MustPut is the same as Put but it will retry the operation if it
+// fails because of a transaction retry or contention error.
+// The retry will continue to occur for max of 10 minutes using
+// an exponential backoff algorithm.
+// Note: if an external database connection is passed using the db option and a transaction
+// fails, it will not be retried
+func (o *Object) MustPut(objs interface{}, options ...patchain.Option) error {
+	var err error
+	c := redo.NewDefaultBackoffConfig()
+	c.MaxElapsedTime = 10 * time.Minute
+	err = redo.NewRedo().BackOff(c, func(stop func()) error {
+		var err error
+		err = o.Put(objs, options...)
+		if err != nil {
+			if o.RequiresRetry(err) {
+				return err
+			}
+			stop()
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 // Put adds an object into a randomly selected partition belonging to
