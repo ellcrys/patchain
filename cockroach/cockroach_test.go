@@ -128,6 +128,13 @@ func TestCockroach(t *testing.T) {
 					})
 				})
 
+				Convey(".getValidObjectFields", func() {
+					Convey("Should not include blacklisted fields", func() {
+						fields := cdb.getValidObjectFields()
+						So(fields, ShouldNotContain, blacklistedFields)
+					})
+				})
+
 				Convey(".getDBTxFromOption", func() {
 					Convey("Should successfully return database object included in the options", func() {
 						_db := &DB{ConnectionString: conStrWithDB}

@@ -22,7 +22,7 @@ type DB interface {
 	Count(q Query, out *int64, options ...Option) error
 	GetLast(q Query, out interface{}, options ...Option) error
 	GetAll(q Query, out interface{}, options ...Option) error
-	NewQuery() (jsq.Query, error)
+	NewQuery() jsq.Query
 	Begin() DB
 	Transact(TxFunc) error
 	TransactWithDB(db DB, finishTx bool, txF TxFunc) error

@@ -3,7 +3,11 @@ package cockroach
 import (
 	"fmt"
 
+	"strings"
+
+	"github.com/ellcrys/util"
 	"github.com/fatih/structs"
+	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres dialect
 	"github.com/jinzhu/inflection"
@@ -14,6 +18,9 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/pkg/errors"
 )
+
+// blacklistedFields cannot be included in JSQ query
+var blacklistedFields = []string{"creator_id", "partition_id", "JSQ_params", "schema_version"}
 
 // DB defines a structure that implements the DB interface
 // to provide database access
@@ -46,14 +53,22 @@ func (c *DB) Connect(maxOpenConn, maxIdleConn int) error {
 	return nil
 }
 
-// NewQuery creates an instance of a json structured query.
-func (c *DB) NewQuery() (jsq.Query, error) {
-	jsq, err := jsq.NewJSQ("postgres", c.ConnectionString)
-	if err != nil {
-		return nil, err
+// getValidObjectFields from the tables.Object. JSON tag must be set.
+func (c *DB) getValidObjectFields() (fields []string) {
+	var fieldNames = structs.New(tables.Object{}).Fields()
+	for _, f := range fieldNames {
+		field := strcase.ToSnake(f.Tag("json"))
+		field = strings.Split(field, ",")[0]
+		if !util.InStringSlice(blacklistedFields, field) {
+			fields = append(fields, field)
+		}
 	}
-	jsq.Debug(true)
-	return jsq, nil
+	return
+}
+
+// NewQuery creates an instance of a json structured query parser
+func (c *DB) NewQuery() jsq.Query {
+	return jsq.NewJSQ(c.getValidObjectFields())
 }
 
 // GetLogger returns the package's logger
