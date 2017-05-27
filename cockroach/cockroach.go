@@ -253,17 +253,25 @@ func (c *DB) Count(q patchain.Query, out *int64, options ...patchain.Option) err
 		Count(out).Error
 }
 
-// getQueryModifiers applies the query parameters associated with query object to the db connection
+// getQueryModifiers applies the query parameters
+// associated with query object to the db connection
 func (c *DB) getQueryModifiers(q patchain.Query) []func(*gorm.DB) *gorm.DB {
-	var modifiers []func(*gorm.DB) *gorm.DB
 
-	// add query modifier
-	modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
-		return conn.Where(q)
-	})
+	var modifiers []func(*gorm.DB) *gorm.DB
+	qp := q.GetQueryParams()
+
+	// if no expression in query param, use the query from the parameter
+	if qp.Expr.Expr == "" {
+		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
+			return conn.Where(q)
+		})
+	} else {
+		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
+			return conn.Where(qp.Expr.Expr, qp.Expr.Args...)
+		})
+	}
 
 	// get query params. If none, return modifier
-	qp := q.GetQueryParams()
 	if qp == nil {
 		return modifiers
 	}
@@ -274,23 +282,14 @@ func (c *DB) getQueryModifiers(q patchain.Query) []func(*gorm.DB) *gorm.DB {
 		})
 	}
 
-	if qp.MustOrderByTimestampDesc {
-		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
-			return conn.Order("timestamp desc")
-		})
-	}
+	modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
+		return conn.Order("timestamp desc")
+	})
 
-	// orderer by timestamp if none is set
 	if len(qp.OrderBy) > 0 {
 		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
 			return conn.Order(qp.OrderBy)
 		})
-	} else {
-		if !qp.MustOrderByTimestampDesc {
-			modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
-				return conn.Order("timestamp desc")
-			})
-		}
 	}
 
 	return modifiers

@@ -289,7 +289,7 @@ func TestCockroach(t *testing.T) {
 				})
 			})
 
-			Convey(".applyQueryParams - Tests query parameters", func() {
+			Convey(".getQueryModifiers - Tests query parameters", func() {
 				Convey("KeyStartsWith", func() {
 					Convey("Should return the last object with the matching start key", func() {
 						key := "special_key_prefix/abc"
@@ -339,6 +339,28 @@ func TestCockroach(t *testing.T) {
 						So(len(objs), ShouldEqual, 2)
 						So(res[1], ShouldResemble, objs[0])
 						So(res[0], ShouldResemble, objs[1])
+					})
+
+					Convey("Should use QueryParam.Expr for query if set, instead of the query object", func() {
+						key := util.RandString(5)
+						obj := &tables.Object{ID: util.UUID4(), Key: key}
+						err := cdb.Create(obj)
+						So(err, ShouldBeNil)
+						conn := cdb.GetConn().(*gorm.DB)
+						res := []*tables.Object{}
+						modifiers := cdb.getQueryModifiers(&tables.Object{
+							Key: "some_key",
+							QueryParams: patchain.QueryParams{
+								Expr: patchain.Expr{
+									Expr: "key = ?",
+									Args: []interface{}{key},
+								},
+							},
+						})
+						err = conn.NewScope(nil).DB().Scopes(modifiers...).Find(&res).Error
+						So(err, ShouldBeNil)
+						So(len(res), ShouldEqual, 1)
+						So(obj, ShouldResemble, res[0])
 					})
 
 					Reset(func() {

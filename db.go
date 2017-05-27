@@ -51,14 +51,17 @@ type Query interface {
 	GetQueryParams() *QueryParams
 }
 
+// Expr describes a query expression
+type Expr struct {
+	Expr string
+	Args []interface{}
+}
+
 // QueryParams represents object query options
 type QueryParams struct {
+	Expr          Expr   `json:"-" structs:"-" mapstructure:"-" gorm:"-"`
 	KeyStartsWith string `json:"-" structs:"-" mapstructure:"-" gorm:"-"`
 	OrderBy       string `json:"-" structs:"-" mapstructure:"-" gorm:"-"`
-
-	// If set to true, the query will be ordered by timestamp first before
-	// including any value of OrderBy
-	MustOrderByTimestampDesc bool `json:"-" structs:"-" mapstructure:"-" gorm:"-"`
 }
 
 // TxFunc is called after a transaction is started.
