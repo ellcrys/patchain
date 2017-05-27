@@ -144,7 +144,6 @@ func (o *Object) MustCreatePartitions(n int64, ownerID, creatorID string, option
 // It does this by enforcing a descending order of the insert timestamp of the object.
 func (o *Object) GetLast(q patchain.Query, options ...patchain.Option) (*tables.Object, error) {
 	var obj tables.Object
-	q.GetQueryParams().MustOrderByTimestampDesc = true
 	err := o.db.GetLast(q, &obj, options...)
 	if err != nil {
 		return nil, err
