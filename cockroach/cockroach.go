@@ -85,7 +85,7 @@ func (c *DB) NoLogging() {
 
 // Close closes the database connection
 func (c *DB) Close() error {
-	return c.Close()
+	return c.db.Close()
 }
 
 // GetConn returns the underlying db connection
