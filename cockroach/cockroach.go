@@ -53,8 +53,8 @@ func (c *DB) Connect(maxOpenConn, maxIdleConn int) error {
 	return nil
 }
 
-// getValidObjectFields from the tables.Object. JSON tag must be set.
-func (c *DB) getValidObjectFields() (fields []string) {
+// GetValidObjectFields the json name of fields that can be queried using the JSQ parser.
+func (c *DB) GetValidObjectFields() (fields []string) {
 	var fieldNames = structs.New(tables.Object{}).Fields()
 	for _, f := range fieldNames {
 		field := strcase.ToSnake(f.Tag("json"))
@@ -68,7 +68,7 @@ func (c *DB) getValidObjectFields() (fields []string) {
 
 // NewQuery creates an instance of a json structured query parser
 func (c *DB) NewQuery() jsq.Query {
-	return jsq.NewJSQ(c.getValidObjectFields())
+	return jsq.NewJSQ(c.GetValidObjectFields())
 }
 
 // GetLogger returns the package's logger
@@ -224,9 +224,7 @@ func (c *DB) Rollback() error {
 // GetLast gets the last document that matches the query object
 func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	err := dbTx.GetConn().(*gorm.DB).
-		Scopes(c.getQueryModifiers(q)...).
-		Last(out).Error
+	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q)...).Last(out).Error
 	if err != nil {
 		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
 			return patchain.ErrNotFound
@@ -289,6 +287,12 @@ func (c *DB) getQueryModifiers(q patchain.Query) []func(*gorm.DB) *gorm.DB {
 	if len(qp.OrderBy) > 0 {
 		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
 			return conn.Order(qp.OrderBy)
+		})
+	}
+
+	if qp.Limit > 0 {
+		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
+			return conn.Limit(qp.Limit)
 		})
 	}
 

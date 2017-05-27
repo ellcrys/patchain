@@ -363,6 +363,26 @@ func TestCockroach(t *testing.T) {
 						So(obj, ShouldResemble, res[0])
 					})
 
+					Convey("Should limit objects returned if Limit is set", func() {
+						objs := []*tables.Object{&tables.Object{ID: util.UUID4(), Key: "1"}, &tables.Object{ID: util.UUID4(), Key: "2"}}
+						objs[0].Init()
+						objs[1].Init()
+						objsI, _ := util.ToSliceInterface(objs)
+						err := cdb.CreateBulk(objsI)
+						So(err, ShouldBeNil)
+						conn := cdb.GetConn().(*gorm.DB)
+						modifiers := cdb.getQueryModifiers(&tables.Object{
+							QueryParams: patchain.QueryParams{
+								Limit: 1,
+							},
+						})
+						var res []*tables.Object
+						err = conn.Scopes(modifiers...).Find(&res).Error
+						So(err, ShouldBeNil)
+						So(len(res), ShouldEqual, 1)
+						So(objs[1], ShouldResemble, res[0])
+					})
+
 					Reset(func() {
 						clearTable(cdb.GetConn().(*gorm.DB), "objects")
 					})
