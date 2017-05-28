@@ -46,9 +46,7 @@ func (o *Object) Init() *Object {
 		o.ID = util.UUID4()
 	}
 
-	// set the previous hash to the sha256 hash off the object's ID it not already set. Typically, this
-	// will be set when chaining to other objects. Defaulting to the id makes sense because
-	// the unique constraint on the column prevents more than one empty/null prev hash column
+	// set the previous hash to the sha256 hash off the object's ID it not already set.
 	if o.PrevHash == "" {
 		o.PrevHash = util.Sha256(o.ID)
 	}

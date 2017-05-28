@@ -51,5 +51,23 @@ func TestObjectUtil(t *testing.T) {
 				So(objs[1].Hash, ShouldEqual, objs[2].PrevHash)
 			})
 		})
+
+		Convey(".MakeChainWithPrefix", func() {
+			Convey("Should successfully chain multiple objects", func() {
+				objs := []*tables.Object{
+					MakeIdentityObject("owner_id", "creator_id", "lana@gmail.com", "some_password", true),
+					MakeIdentityObject("owner_id_2", "creator_id_2", "lana_2@gmail.com", "some_password_2", true),
+					MakeIdentityObject("owner_id_3", "creator_id_3", "lana_3@gmail.com", "some_password_3", false),
+				}
+				MakeChainWithPrefix("prtn", objs...)
+				So(objs[0].PrevHash, ShouldEqual, util.Sha256(objs[0].ID))
+				So("prtn/"+objs[0].Hash, ShouldEqual, objs[1].PrevHash)
+				So("prtn/"+objs[1].Hash, ShouldEqual, objs[2].PrevHash)
+				MakeChainWithPrefix("prtn", objs...)
+				So(objs[0].PrevHash, ShouldEqual, util.Sha256(objs[0].ID))
+				So("prtn/"+objs[0].Hash, ShouldEqual, objs[1].PrevHash)
+				So("prtn/"+objs[1].Hash, ShouldEqual, objs[2].PrevHash)
+			})
+		})
 	})
 }

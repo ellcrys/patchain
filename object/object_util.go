@@ -60,7 +60,7 @@ func MakeDeveloperIdentityObject(ownerID, creatorID, email, password string, pro
 	return po.Init()
 }
 
-// MakeChain objects and chains them together. Each object referencing the
+// MakeChain takes objects and chains them together. Each object referencing the
 // hash of the previous on their PrevHash field.
 func MakeChain(objects ...*tables.Object) {
 	for i, object := range objects {
@@ -68,6 +68,20 @@ func MakeChain(objects ...*tables.Object) {
 		if i > 0 {
 			prevObj := objects[i-1]
 			object.PrevHash = prevObj.Hash
+			object.ComputeHash()
+		}
+	}
+}
+
+// MakeChainWithPrefix takes objects and chains them together. Each object referencing the
+// hash of the previous on their PrevHash field. prevHashPrefix is used as a flag to tell
+// what kind of object is being chained or as a namespace for certain objects (e.g partitions).
+func MakeChainWithPrefix(prevHashPrefix string, objects ...*tables.Object) {
+	for i, object := range objects {
+		object.Init().ComputeHash()
+		if i > 0 {
+			prevObj := objects[i-1]
+			object.PrevHash = prevHashPrefix + "/" + prevObj.Hash
 			object.ComputeHash()
 		}
 	}
