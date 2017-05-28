@@ -130,7 +130,7 @@ func TestCockroach(t *testing.T) {
 
 				Convey(".getValidObjectFields", func() {
 					Convey("Should not include blacklisted fields", func() {
-						fields := cdb.getValidObjectFields()
+						fields := cdb.GetValidObjectFields()
 						So(fields, ShouldNotContain, blacklistedFields)
 					})
 				})
@@ -172,6 +172,7 @@ func TestCockroach(t *testing.T) {
 						dbTx := cdb.Begin()
 
 						o := tables.Object{ID: util.UUID4()}
+						o.Init().ComputeHash()
 						err := cdb.Create(&o, &patchain.UseDBOption{DB: dbTx})
 						So(err, ShouldBeNil)
 						dbTx.Rollback()
@@ -192,8 +193,8 @@ func TestCockroach(t *testing.T) {
 
 				Convey("Should successfully create bulk objects", func() {
 					objs := []*tables.Object{&tables.Object{ID: util.UUID4()}, &tables.Object{ID: util.UUID4()}}
-					objs[0].Init()
-					objs[1].Init()
+					objs[0].Init().ComputeHash()
+					objs[1].Init().ComputeHash()
 					objsI, _ := util.ToSliceInterface(objs)
 					err := cdb.CreateBulk(objsI)
 					So(err, ShouldBeNil)
@@ -217,7 +218,7 @@ func TestCockroach(t *testing.T) {
 					key := util.RandString(5)
 					obj1 := &tables.Object{Key: key}
 					obj2 := &tables.Object{Key: key}
-					objs := []*tables.Object{obj1.Init(), obj2.Init()}
+					objs := []*tables.Object{obj1.Init().ComputeHash(), obj2.Init().ComputeHash()}
 					objsI, _ := util.ToSliceInterface(objs)
 					_ = objsI
 					err := cdb.CreateBulk(objsI)
@@ -251,8 +252,8 @@ func TestCockroach(t *testing.T) {
 				Convey("Should successfully return objects", func() {
 					key := util.RandString(5)
 					objs := []*tables.Object{&tables.Object{ID: util.UUID4(), Key: key}, &tables.Object{ID: util.UUID4(), Key: key}}
-					objs[0].Init()
-					objs[1].Init()
+					objs[0].Init().ComputeHash()
+					objs[1].Init().ComputeHash()
 					objsI, _ := util.ToSliceInterface(objs)
 					err := cdb.CreateBulk(objsI)
 
@@ -272,8 +273,8 @@ func TestCockroach(t *testing.T) {
 				Convey("Should successfully count objects that match a query", func() {
 					key := util.RandString(5)
 					objs := []*tables.Object{&tables.Object{ID: util.UUID4(), Key: key}, &tables.Object{ID: util.UUID4(), Key: key}}
-					objs[0].Init()
-					objs[1].Init()
+					objs[0].Init().ComputeHash()
+					objs[1].Init().ComputeHash()
 					objsI, _ := util.ToSliceInterface(objs)
 					err := cdb.CreateBulk(objsI)
 
@@ -310,8 +311,8 @@ func TestCockroach(t *testing.T) {
 
 					Convey("Should return the objects ordered by a field in ascending and descending order", func() {
 						objs := []*tables.Object{&tables.Object{ID: util.UUID4(), Key: "1"}, &tables.Object{ID: util.UUID4(), Key: "2"}}
-						objs[0].Init()
-						objs[1].Init()
+						objs[0].Init().ComputeHash()
+						objs[1].Init().ComputeHash()
 						objsI, _ := util.ToSliceInterface(objs)
 						err := cdb.CreateBulk(objsI)
 						So(err, ShouldBeNil)
@@ -365,8 +366,8 @@ func TestCockroach(t *testing.T) {
 
 					Convey("Should limit objects returned if Limit is set", func() {
 						objs := []*tables.Object{&tables.Object{ID: util.UUID4(), Key: "1"}, &tables.Object{ID: util.UUID4(), Key: "2"}}
-						objs[0].Init()
-						objs[1].Init()
+						objs[0].Init().ComputeHash()
+						objs[1].Init().ComputeHash()
 						objsI, _ := util.ToSliceInterface(objs)
 						err := cdb.CreateBulk(objsI)
 						So(err, ShouldBeNil)
