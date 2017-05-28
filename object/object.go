@@ -76,8 +76,8 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 			partitions = append(partitions, newPartition)
 		}
 
-		// chain partitions
-		MakeChain(partitions...)
+		// chain partitions with prefixed prev hash
+		MakeChainWithPrefix("prtn", partitions...)
 
 		return partitions, o.db.TransactWithDB(dbTx, finish, func(dbTx patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
 
@@ -95,8 +95,9 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 				return o.db.CreateBulk(partitionsI, dbOptions...)
 			}
 
-			// update the previous hash of the first in the new partitions to the hash of the last partition
-			partitionsI[0].(*tables.Object).PrevHash = lastPartition.Hash
+			// update the previous hash of the first of the new partitions
+			// to the hash of the last partition and also include the 'prtn' prefix
+			partitionsI[0].(*tables.Object).PrevHash = "prtn/" + lastPartition.Hash
 			return o.db.CreateBulk(partitionsI, dbOptions...)
 		})
 	}
