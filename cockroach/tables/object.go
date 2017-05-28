@@ -22,7 +22,7 @@ type Object struct {
 	Protected     bool                 `json:"protected,omitempty" structs:"protected,omitempty" mapstructure:"protected,omitempty"`
 	RefOnly       bool                 `json:"ref_only,omitempty" structs:"refOnly,omitempty" mapstructure:"refOnly,omitempty"`
 	Timestamp     int64                `json:"timestamp,omitempty" structs:"timestamp,omitempty" mapstructure:"timestamp,omitempty"`
-	PrevHash      string               `json:"prev_hash,omitempty" structs:"prevHash,omitempty" mapstructure:"prevHash,omitempty" gorm:"unique_index:key_prev_hash"`
+	PrevHash      string               `json:"prev_hash,omitempty" structs:"prevHash,omitempty" mapstructure:"prevHash,omitempty" gorm:"type:varchar(70);unique_index:idx_prev_hash"`
 	Hash          string               `json:"hash,omitempty" structs:"hash,omitempty" mapstructure:"hash,omitempty" gorm:"unique_index:idx_hash"`
 	SchemaVersion string               `json:"schema_version,omitempty" structs:"schemaVersion,omitempty" mapstructure:"schemaVersion,omitempty"`
 	Ref1          string               `json:"ref1,omitempty" structs:"ref1,omitempty" mapstructure:"ref1,omitempty" gorm:"type:varchar(64)"`
