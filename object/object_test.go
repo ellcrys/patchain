@@ -146,8 +146,8 @@ func TestObject(t *testing.T) {
 					})
 
 					Convey("partitions must be chained to the partition before it", func() {
-						So(partitions[1].PrevHash, ShouldEqual, partitions[0].Hash)
-						So(partitions[2].PrevHash, ShouldEqual, partitions[1].Hash)
+						So(partitions[1].PrevHash, ShouldEqual, "prtn/"+partitions[0].Hash)
+						So(partitions[2].PrevHash, ShouldEqual, "prtn/"+partitions[1].Hash)
 					})
 
 					Convey("New partition must reference the prev hash of the last included partition", func() {
@@ -156,8 +156,8 @@ func TestObject(t *testing.T) {
 						So(len(latestPartitions), ShouldEqual, 2)
 
 						Convey("first partition must reference the prev hash of the last partition", func() {
-							So(latestPartitions[0].PrevHash, ShouldEqual, partitions[2].Hash)
-							So(latestPartitions[1].PrevHash, ShouldEqual, latestPartitions[0].Hash)
+							So(latestPartitions[0].PrevHash, ShouldEqual, "prtn/"+partitions[2].Hash)
+							So(latestPartitions[1].PrevHash, ShouldEqual, "prtn/"+latestPartitions[0].Hash)
 						})
 					})
 				})
@@ -179,8 +179,8 @@ func TestObject(t *testing.T) {
 					})
 
 					Convey("partitions must be chained to the partition before it", func() {
-						So(partitions[1].PrevHash, ShouldEqual, partitions[0].Hash)
-						So(partitions[2].PrevHash, ShouldEqual, partitions[1].Hash)
+						So(partitions[1].PrevHash, ShouldEqual, "prtn/"+partitions[0].Hash)
+						So(partitions[2].PrevHash, ShouldEqual, "prtn/"+partitions[1].Hash)
 					})
 
 					Convey("New partition must reference the prev hash of the last included partition", func() {
@@ -189,8 +189,8 @@ func TestObject(t *testing.T) {
 						So(len(latestPartitions), ShouldEqual, 2)
 
 						Convey("first partition must reference the prev hash of the last partition", func() {
-							So(latestPartitions[0].PrevHash, ShouldEqual, partitions[2].Hash)
-							So(latestPartitions[1].PrevHash, ShouldEqual, latestPartitions[0].Hash)
+							So(latestPartitions[0].PrevHash, ShouldEqual, "prtn/"+partitions[2].Hash)
+							So(latestPartitions[1].PrevHash, ShouldEqual, "prtn/"+latestPartitions[0].Hash)
 						})
 					})
 				})
