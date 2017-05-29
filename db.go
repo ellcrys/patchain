@@ -23,6 +23,9 @@ type DB interface {
 	// SetConn sets the connection or session
 	SetConn(interface{}) error
 
+	// NewDB create a new DB connection
+	NewDB() DB
+
 	// CreateTables creates the tables required for the patchain model.
 	CreateTables() error
 

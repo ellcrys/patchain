@@ -174,6 +174,11 @@ func (c *DB) CreateBulk(objs []interface{}, options ...patchain.Option) error {
 	return nil
 }
 
+// NewDB creates a new connection
+func (c *DB) NewDB() patchain.DB {
+	return &DB{db: c.db.NewScope(nil).NewDB()}
+}
+
 // Begin returns a database object with an active transaction session
 func (c *DB) Begin() patchain.DB {
 	return &DB{db: c.db.NewScope(nil).DB().Begin()}
