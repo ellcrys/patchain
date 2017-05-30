@@ -242,9 +242,14 @@ func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Opti
 // GetAll fetches all documents that match a query
 func (c *DB) GetAll(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	return dbTx.GetConn().(*gorm.DB).
-		Scopes(c.getQueryModifiers(q)...).
-		Find(out).Error
+	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q)...).Find(out).Error
+	if err != nil {
+		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
+			return patchain.ErrNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 // Count returns a count of the number of documents that matches the query
