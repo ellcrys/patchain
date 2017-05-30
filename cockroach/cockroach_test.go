@@ -302,7 +302,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								KeyStartsWith: "special_key_prefix",
 							},
-						}, true)
+						})
 						var last tables.Object
 						err = conn.Scopes(modifiers...).Last(&last).Error
 						So(err, ShouldBeNil)
@@ -321,7 +321,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								OrderBy: "key desc",
 							},
-						}, true)
+						})
 						var res []*tables.Object
 						err = conn.Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
@@ -334,7 +334,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								OrderBy: "key desc",
 							},
-						}, true)
+						})
 						err = conn.NewScope(nil).DB().Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
 						So(len(objs), ShouldEqual, 2)
@@ -357,7 +357,7 @@ func TestCockroach(t *testing.T) {
 									Args: []interface{}{key},
 								},
 							},
-						}, true)
+						})
 						err = conn.NewScope(nil).DB().Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
 						So(len(res), ShouldEqual, 1)
@@ -376,7 +376,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								Limit: 1,
 							},
-						}, true)
+						})
 						var res []*tables.Object
 						err = conn.Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)

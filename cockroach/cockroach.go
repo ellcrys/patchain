@@ -229,7 +229,7 @@ func (c *DB) Rollback() error {
 // GetLast gets the last document that matches the query object
 func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q, true)...).Limit(1).Find(out).Error
+	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q)...).Limit(1).Find(out).Error
 	if err != nil {
 		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
 			return patchain.ErrNotFound
@@ -242,7 +242,7 @@ func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Opti
 // GetAll fetches all documents that match a query
 func (c *DB) GetAll(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q, true)...).Find(out).Error
+	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q)...).Find(out).Error
 	if err != nil {
 		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
 			return patchain.ErrNotFound
@@ -256,15 +256,14 @@ func (c *DB) GetAll(q patchain.Query, out interface{}, options ...patchain.Optio
 func (c *DB) Count(q patchain.Query, out *int64, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
 	return dbTx.GetConn().(*gorm.DB).
-		Scopes(c.getQueryModifiers(q, true)...).
+		Scopes(c.getQueryModifiers(q)...).
 		Model(q).
 		Count(out).Error
 }
 
 // getQueryModifiers applies the query parameters
 // associated with query object to the db connection.
-// If orderByTimestamp is true an order by timestamp DESC is included
-func (c *DB) getQueryModifiers(q patchain.Query, orderByTimestamp bool) []func(*gorm.DB) *gorm.DB {
+func (c *DB) getQueryModifiers(q patchain.Query) []func(*gorm.DB) *gorm.DB {
 
 	var modifiers []func(*gorm.DB) *gorm.DB
 	qp := q.GetQueryParams()
@@ -288,12 +287,6 @@ func (c *DB) getQueryModifiers(q patchain.Query, orderByTimestamp bool) []func(*
 	if len(qp.KeyStartsWith) > 0 {
 		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
 			return conn.Where("key LIKE ?", qp.KeyStartsWith+"%")
-		})
-	}
-
-	if orderByTimestamp {
-		modifiers = append(modifiers, func(conn *gorm.DB) *gorm.DB {
-			return conn.Order("timestamp desc")
 		})
 	}
 
