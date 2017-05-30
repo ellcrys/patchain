@@ -20,7 +20,7 @@ import (
 )
 
 // blacklistedFields cannot be included in JSQ query
-var blacklistedFields = []string{"creator_id", "partition_id", "JSQ_params", "schema_version"}
+var blacklistedFields = []string{"partition_id", "JSQ_params"}
 
 // DB defines a structure that implements the DB interface
 // to provide database access
