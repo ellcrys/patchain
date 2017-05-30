@@ -229,7 +229,7 @@ func (c *DB) Rollback() error {
 // GetLast gets the last document that matches the query object
 func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q)...).Limit(1).Find(out).Error
+	err := dbTx.GetConn().(*gorm.DB).Order("timestamp desc").Scopes(c.getQueryModifiers(q)...).Limit(1).Find(out).Error
 	if err != nil {
 		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
 			return patchain.ErrNotFound

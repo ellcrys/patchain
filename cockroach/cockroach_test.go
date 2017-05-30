@@ -374,7 +374,8 @@ func TestCockroach(t *testing.T) {
 						conn := cdb.GetConn().(*gorm.DB)
 						modifiers := cdb.getQueryModifiers(&tables.Object{
 							QueryParams: patchain.QueryParams{
-								Limit: 1,
+								Limit:   1,
+								OrderBy: "timestamp desc",
 							},
 						})
 						var res []*tables.Object
