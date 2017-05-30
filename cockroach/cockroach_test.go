@@ -215,18 +215,18 @@ func TestCockroach(t *testing.T) {
 
 			Convey(".GetLast", func() {
 				Convey("Should successfully return the last object matching the query", func() {
-					key := util.RandString(5)
-					obj1 := &tables.Object{Key: key}
-					obj2 := &tables.Object{Key: key}
-					objs := []*tables.Object{obj1.Init().ComputeHash(), obj2.Init().ComputeHash()}
+					obj1 := &tables.Object{Key: "axa", Value: "1"}
+					obj2 := &tables.Object{Key: "axa", Value: "2"}
+					obj3 := &tables.Object{Key: "axa", Value: "3"}
+					objs := []*tables.Object{obj1.Init().ComputeHash(), obj2.Init().ComputeHash(), obj3.Init().ComputeHash()}
 					objsI, _ := util.ToSliceInterface(objs)
 					_ = objsI
 					err := cdb.CreateBulk(objsI)
 					So(err, ShouldBeNil)
 					var last tables.Object
-					err = cdb.GetLast(&tables.Object{Key: key}, &last)
+					err = cdb.GetLast(&tables.Object{Key: "axa"}, &last)
 					So(err, ShouldBeNil)
-					So(obj2, ShouldResemble, &last)
+					So(&last, ShouldResemble, objs[2])
 				})
 
 				Convey("Should return ErrNoFound if nothing was found", func() {
@@ -302,7 +302,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								KeyStartsWith: "special_key_prefix",
 							},
-						})
+						}, true)
 						var last tables.Object
 						err = conn.Scopes(modifiers...).Last(&last).Error
 						So(err, ShouldBeNil)
@@ -321,7 +321,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								OrderBy: "key desc",
 							},
-						})
+						}, true)
 						var res []*tables.Object
 						err = conn.Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
@@ -334,7 +334,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								OrderBy: "key desc",
 							},
-						})
+						}, true)
 						err = conn.NewScope(nil).DB().Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
 						So(len(objs), ShouldEqual, 2)
@@ -357,7 +357,7 @@ func TestCockroach(t *testing.T) {
 									Args: []interface{}{key},
 								},
 							},
-						})
+						}, true)
 						err = conn.NewScope(nil).DB().Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
 						So(len(res), ShouldEqual, 1)
@@ -376,7 +376,7 @@ func TestCockroach(t *testing.T) {
 							QueryParams: patchain.QueryParams{
 								Limit: 1,
 							},
-						})
+						}, true)
 						var res []*tables.Object
 						err = conn.Scopes(modifiers...).Find(&res).Error
 						So(err, ShouldBeNil)
