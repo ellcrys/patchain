@@ -22,7 +22,8 @@ type Object struct {
 	Protected     bool                 `json:"protected,omitempty" structs:"protected,omitempty" mapstructure:"protected,omitempty"`
 	RefOnly       bool                 `json:"ref_only,omitempty" structs:"refOnly,omitempty" mapstructure:"refOnly,omitempty"`
 	Timestamp     int64                `json:"timestamp,omitempty" structs:"timestamp,omitempty" mapstructure:"timestamp,omitempty"`
-	PrevHash      string               `json:"prev_hash,omitempty" structs:"prevHash,omitempty" mapstructure:"prevHash,omitempty" gorm:"type:varchar(70);unique_index:idx_prev_hash"`
+	PrevHash      *string              `json:"prev_hash,omitempty" structs:"prevHash,omitempty" mapstructure:"prevHash,omitempty" gorm:"type:varchar(70)"`
+	PeerHash      *string              `json:"peer_hash,omitempty" structs:"peerHash,omitempty" mapstructure:"peerHash,omitempty" gorm:"type:varchar(70);unique_index:idx_peer_hash"`
 	Hash          string               `json:"hash,omitempty" structs:"hash,omitempty" mapstructure:"hash,omitempty" gorm:"unique_index:idx_hash"`
 	SchemaVersion string               `json:"schema_version,omitempty" structs:"schemaVersion,omitempty" mapstructure:"schemaVersion,omitempty"`
 	Ref1          string               `json:"ref1,omitempty" structs:"ref1,omitempty" mapstructure:"ref1,omitempty" gorm:"type:varchar(64)"`
@@ -47,8 +48,9 @@ func (o *Object) Init() *Object {
 	}
 
 	// set the previous hash to the sha256 hash off the object's ID it not already set.
-	if o.PrevHash == "" {
-		o.PrevHash = util.Sha256(o.ID)
+	if o.PrevHash == nil {
+		prevHash := util.Sha256(o.ID)
+		o.PrevHash = &prevHash
 	}
 
 	if o.Timestamp == 0 {
@@ -72,12 +74,22 @@ func (o *Object) ComputeHash() *Object {
 			o.Protected,
 			o.RefOnly,
 			o.Timestamp,
-			o.PrevHash,
+			*o.PrevHash,
 			o.SchemaVersion,
 			o.Ref1, o.Ref2, o.Ref3, o.Ref4, o.Ref5, o.Ref6, o.Ref7, o.Ref8, o.Ref9, o.Ref10,
 		))
 	}
 
+	return o
+}
+
+// ComputePeerHash computes the peer hash. A peer hash binds the current object
+// to the object next object.
+func (o *Object) ComputePeerHash(nextObjHash string) *Object {
+	if o.SchemaVersion == "1" {
+		peerHash := util.Sha256(fmt.Sprintf("%s/%s", o.Hash, nextObjHash))
+		o.PeerHash = &peerHash
+	}
 	return o
 }
 

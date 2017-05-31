@@ -77,7 +77,7 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 		}
 
 		// chain partitions with prefixed prev hash
-		MakeChainWithPrefix("prtn", partitions...)
+		MakeChain(partitions...)
 
 		return partitions, o.db.TransactWithDB(dbTx, finish, func(dbTx patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
 
@@ -96,8 +96,9 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 			}
 
 			// update the previous hash of the first of the new partitions
-			// to the hash of the last partition and also include the 'prtn' prefix
-			partitionsI[0].(*tables.Object).PrevHash = "prtn/" + lastPartition.Hash
+			// to the hash of the last partition
+			partitionsI[0].(*tables.Object).PrevHash = util.StrToPtr(lastPartition.Hash)
+			MakeChain(partitions...)
 			return o.db.CreateBulk(partitionsI, dbOptions...)
 		})
 	}
@@ -272,7 +273,7 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 				// no object in this partition! Use the hash of the partition as the PrevHash value
 				// of the first object, chain the objects and create them
 				if err == patchain.ErrNotFound {
-					objects[0].PrevHash = selectedPartition.Hash
+					objects[0].PrevHash = util.StrToPtr(selectedPartition.Hash)
 					MakeChain(objects...)
 					for _, o := range objects {
 						if err = dbTx.Create(o, options...); err != nil {
@@ -285,13 +286,20 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 
 			// assign hash of last object as the PrevHash value
 			// of the first object, chain the  objects and create them
-			objects[0].PrevHash = lastObj.Hash
+			objects[0].PrevHash = util.StrToPtr(lastObj.Hash)
 			MakeChain(objects...)
 			for _, o := range objects {
 				if err := dbTx.Create(o, options...); err != nil {
 					return errors.Wrap(err, "failed to add object to partition")
 				}
 			}
+
+			// update peer hash of last object
+			lastObj.ComputePeerHash(objects[0].Hash)
+			if err := dbTx.UpdatePeerHash(lastObj, *lastObj.PeerHash, options...); err != nil {
+				return errors.Wrap(err, "failed to update last object peer hash")
+			}
+
 			return nil
 		})
 	}

@@ -15,10 +15,12 @@ import (
 	r "math/rand"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"golang.org/x/net/context"
@@ -38,6 +40,7 @@ import (
 	spin "github.com/ncodes/go-spin"
 	"github.com/ncodes/mapstructure"
 	"github.com/satori/go.uuid"
+	context2 "golang.org/x/net/context"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -253,12 +256,9 @@ func IsMapOfAny(any interface{}) bool {
 	switch any.(type) {
 	case map[string]interface{}:
 		return true
-		break
 	default:
 		return false
-		break
 	}
-	return false
 }
 
 // IsSlice checks that a variable value type is a slice
@@ -266,12 +266,9 @@ func IsSlice(any interface{}) bool {
 	switch any.(type) {
 	case []interface{}:
 		return true
-		break
 	default:
 		return false
-		break
 	}
-	return false
 }
 
 // ContainsOnlyMapType checks that a slice contains map[string]interface{} type
@@ -280,7 +277,6 @@ func ContainsOnlyMapType(s []interface{}) bool {
 		switch v.(type) {
 		case map[string]interface{}:
 			continue
-			break
 		default:
 			return false
 		}
@@ -294,7 +290,6 @@ func IsSliceOfStrings(s []interface{}) bool {
 		switch v.(type) {
 		case string:
 			continue
-			break
 		default:
 			return false
 		}
@@ -354,21 +349,16 @@ func ToInt64(num interface{}) int64 {
 	switch v := num.(type) {
 	case int:
 		return int64(v)
-		break
 	case int64:
 		return v
-		break
 	case float64:
 		return int64(v)
-		break
 	case string:
 		val, _ := strconv.ParseInt(v, 10, 64)
 		return val
-		break
 	default:
 		panic("type is unsupported")
 	}
-	return 0
 }
 
 // Env gets environment variable or return a default value when no set
@@ -515,14 +505,12 @@ func JSONNumberToInt64(val interface{}) int64 {
 			panic("JSONNumberToInt64: " + err.Error())
 		}
 		return num
-		break
 	default:
 		panic("JSONNumberToInt64: unknown type. Expects json.Number")
 	}
-	return 0
 }
 
-//  ToJSON converts struct or map to json
+// ToJSON converts struct or map to json
 func ToJSON(data interface{}) ([]byte, error) {
 	return json.Marshal(data)
 }
@@ -845,4 +833,53 @@ func GetAuthToken(ctx context.Context, scheme string) (string, error) {
 	}
 
 	return authSplit[1], nil
+}
+
+// OnTerminate calls a function when a terminate or interrupt signal is received.
+func OnTerminate(f func(s os.Signal)) {
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		s := <-sigs
+		f(s)
+	}()
+}
+
+// FromMD gets a metadata field from a context of metadata.MD
+func FromMD(d interface{}, key string) string {
+	var md metadata.MD
+	switch _d := d.(type) {
+	case context2.Context:
+		md, _ = metadata.FromOutgoingContext(_d)
+	case metadata.MD:
+		md = _d
+	default:
+		panic(fmt.Errorf("unexpected value type"))
+	}
+	if md[key] == nil {
+		return ""
+	}
+	return md[key][0]
+}
+
+// FromIncomingMD gets a metadata field from a context's incoming metadata
+func FromIncomingMD(d interface{}, key string) string {
+	var md metadata.MD
+	switch _d := d.(type) {
+	case context2.Context:
+		md, _ = metadata.FromIncomingContext(_d)
+	case metadata.MD:
+		md = _d
+	default:
+		panic(fmt.Errorf("unexpected value type"))
+	}
+	if md[key] == nil {
+		return ""
+	}
+	return md[key][0]
+}
+
+// StrToPtr returns a pointer to a string
+func StrToPtr(str string) *string {
+	return &str
 }
