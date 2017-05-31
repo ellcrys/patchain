@@ -61,28 +61,36 @@ func MakeDeveloperIdentityObject(ownerID, creatorID, email, password string, pro
 }
 
 // MakeChain takes objects and chains them together. Each object referencing the
-// hash of the previous on their PrevHash field.
+// hash of the previous on their PrevHash field and each preceding object
+// calculates its PeerHash which is the hash of its own hash and the hash of the object after
 func MakeChain(objects ...*tables.Object) {
 	for i, object := range objects {
 		object.Init().ComputeHash()
 		if i > 0 {
 			prevObj := objects[i-1]
-			object.PrevHash = prevObj.Hash
+			object.PrevHash = util.StrToPtr(prevObj.Hash)
 			object.ComputeHash()
+			prevObj.ComputePeerHash(object.Hash)
 		}
 	}
 }
 
-// MakeChainWithPrefix takes objects and chains them together. Each object referencing the
-// hash of the previous on their PrevHash field. prevHashPrefix is used as a flag to tell
-// what kind of object is being chained or as a namespace for certain objects (e.g partitions).
-func MakeChainWithPrefix(prevHashPrefix string, objects ...*tables.Object) {
-	for i, object := range objects {
-		object.Init().ComputeHash()
-		if i > 0 {
-			prevObj := objects[i-1]
-			object.PrevHash = prevHashPrefix + "/" + prevObj.Hash
-			object.ComputeHash()
-		}
-	}
+// MakeGenesisPair creates two objects to be used as genesis object pairs
+func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*tables.Object {
+	pair := []*tables.Object{{
+		OwnerID:       ownerID,
+		CreatorID:     creatorID,
+		PartitionID:   partitionID,
+		Key:           "$genesis/1",
+		SchemaVersion: "1",
+		PrevHash:      util.StrToPtr(partitionHash),
+	}, {
+		OwnerID:       ownerID,
+		CreatorID:     creatorID,
+		PartitionID:   partitionID,
+		Key:           "$genesis/2",
+		SchemaVersion: "1",
+	}}
+	MakeChain(pair...)
+	return pair
 }

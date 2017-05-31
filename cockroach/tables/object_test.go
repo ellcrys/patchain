@@ -1,8 +1,10 @@
 package tables
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/ellcrys/util"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,6 +44,23 @@ func TestObject(t *testing.T) {
 				hash := obj.Hash
 				obj.ComputeHash()
 				So(obj.Hash, ShouldEqual, hash)
+			})
+		})
+
+		Convey(".Compute", func() {
+			Convey("Should create hash and must return same hash as long as object remains unchanged", func() {
+				obj := Object{
+					CreatorID:   "creator_1",
+					OwnerID:     "owner_1",
+					PartitionID: "partition_1",
+					Hash:        "abc",
+				}
+				obj.Init()
+				So(obj.PeerHash, ShouldBeNil)
+				nextObjHash := "some_hash"
+				obj.ComputePeerHash(nextObjHash)
+				peerHash := util.Sha256(fmt.Sprintf("%s/%s", obj.Hash, nextObjHash))
+				So(obj.PeerHash, ShouldResemble, &peerHash)
 			})
 		})
 	})

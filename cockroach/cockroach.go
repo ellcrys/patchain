@@ -174,6 +174,12 @@ func (c *DB) CreateBulk(objs []interface{}, options ...patchain.Option) error {
 	return nil
 }
 
+// UpdatePeerHash updates the peer hash of an object
+func (c *DB) UpdatePeerHash(obj interface{}, newPeerHash string, options ...patchain.Option) error {
+	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
+	return dbTx.GetConn().(*gorm.DB).Model(obj).Update("peer_hash", newPeerHash).Error
+}
+
 // NewDB creates a new connection
 func (c *DB) NewDB() patchain.DB {
 	return &DB{db: c.db.NewScope(nil).NewDB()}

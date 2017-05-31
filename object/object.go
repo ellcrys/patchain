@@ -77,7 +77,7 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 		}
 
 		// chain partitions with prefixed prev hash
-		MakeChainWithPrefix("prtn", partitions...)
+		MakeChain(partitions...)
 
 		return partitions, o.db.TransactWithDB(dbTx, finish, func(dbTx patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
 
@@ -92,13 +92,41 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 			// last partition, add the new partitions
 			partitionsI, _ := util.ToSliceInterface(partitions)
 			if lastPartition == nil {
-				return o.db.CreateBulk(partitionsI, dbOptions...)
+
+				if err := o.db.CreateBulk(partitionsI, dbOptions...); err != nil {
+					return errors.Wrap(err, "failed to create partition")
+				}
+
+				// create genesis pair for each partition
+				for _, partition := range partitions {
+					gPair := MakeGenesisPair(ownerID, creatorID, partition.ID, partition.Hash)
+					gPairI, _ := util.ToSliceInterface(gPair)
+					if err := o.db.CreateBulk(gPairI, dbOptions...); err != nil {
+						return errors.Wrap(err, "failed to create genesis object")
+					}
+				}
+
+				return nil
 			}
 
 			// update the previous hash of the first of the new partitions
-			// to the hash of the last partition and also include the 'prtn' prefix
-			partitionsI[0].(*tables.Object).PrevHash = "prtn/" + lastPartition.Hash
-			return o.db.CreateBulk(partitionsI, dbOptions...)
+			// to the hash of the last partition
+			partitionsI[0].(*tables.Object).PrevHash = util.StrToPtr(lastPartition.Hash)
+			MakeChain(partitions...)
+			if err := o.db.CreateBulk(partitionsI, dbOptions...); err != nil {
+				return errors.Wrap(err, "failed to create partition")
+			}
+
+			// create genesis pair for each partition
+			for _, partition := range partitions {
+				gPair := MakeGenesisPair(ownerID, creatorID, partition.ID, partition.Hash)
+				gPairI, _ := util.ToSliceInterface(gPair)
+				if err := o.db.CreateBulk(gPairI, dbOptions...); err != nil {
+					return errors.Wrap(err, "failed to create genesis object")
+				}
+			}
+
+			return nil
 		})
 	}
 
@@ -269,29 +297,29 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 			// get the last object of the selected partition
 			lastObj, err := o.GetLast(&tables.Object{PartitionID: selectedPartition.ID}, dbOptions...)
 			if err != nil {
-				// no object in this partition! Use the hash of the partition as the PrevHash value
-				// of the first object, chain the objects and create them
+				// no object in this partition! This means no genesis pair/object, return error
 				if err == patchain.ErrNotFound {
-					objects[0].PrevHash = selectedPartition.Hash
-					MakeChain(objects...)
-					for _, o := range objects {
-						if err = dbTx.Create(o, options...); err != nil {
-							return errors.Wrap(err, "failed to add object to partition")
-						}
-					}
+					return fmt.Errorf("no genesis object in the partition")
 				}
 				return err
 			}
 
 			// assign hash of last object as the PrevHash value
 			// of the first object, chain the  objects and create them
-			objects[0].PrevHash = lastObj.Hash
+			objects[0].PrevHash = util.StrToPtr(lastObj.Hash)
 			MakeChain(objects...)
 			for _, o := range objects {
 				if err := dbTx.Create(o, options...); err != nil {
 					return errors.Wrap(err, "failed to add object to partition")
 				}
 			}
+
+			// update peer hash of last object
+			lastObj.ComputePeerHash(objects[0].Hash)
+			if err := dbTx.UpdatePeerHash(lastObj, *lastObj.PeerHash, options...); err != nil {
+				return errors.Wrap(err, "failed to update last object peer hash")
+			}
+
 			return nil
 		})
 	}
