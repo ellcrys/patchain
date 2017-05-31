@@ -8,10 +8,10 @@ import (
 
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/gorm"
-	"github.com/ncodes/patchain"
-	"github.com/ncodes/patchain/cockroach/tables"
 
+	"github.com/ncodes/patchain"
 	"github.com/ncodes/patchain/cockroach"
+	"github.com/ncodes/patchain/cockroach/tables"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -140,6 +140,17 @@ func TestObject(t *testing.T) {
 					partitions, err := obj.CreatePartitions(3, "owner_id", "creator_id")
 					So(err, ShouldBeNil)
 					So(len(partitions), ShouldEqual, 3)
+
+					Convey("All new partitions must include genesis pair objects", func() {
+						for _, partition := range partitions {
+							var all []tables.Object
+							err := cdb.GetAll(&tables.Object{PartitionID: partition.ID, QueryParams: patchain.QueryParams{OrderBy: "timestamp asc"}}, &all)
+							So(err, ShouldBeNil)
+							So(len(all), ShouldEqual, 2)
+							So(all[0].Key, ShouldEqual, "$genesis/1")
+							So(all[1].Key, ShouldEqual, "$genesis/2")
+						}
+					})
 
 					Convey("first partition prev hash must be equal to the SHA256 hash of the ID", func() {
 						So(*partitions[0].PrevHash, ShouldEqual, util.Sha256(partitions[0].ID))
@@ -329,8 +340,33 @@ func TestObject(t *testing.T) {
 					}
 					err = obj.Put(objs)
 					So(err, ShouldBeNil)
-					Convey("first object of the partition must have the partition hash as the value of its prev hash", func() {
-						So(*objs[0].PrevHash, ShouldEqual, partitions[0].Hash)
+
+					Convey("Should return error if partition has no genesis object", func() {
+
+						ownerID := util.RandString(10)
+						identity := MakeIdentityObject(ownerID, ownerID, "email@email.com", "some_pass", true)
+						err := obj.Create(identity)
+						So(err, ShouldBeNil)
+
+						err = cdb.Create(MakePartitionObject("a_partition", ownerID, ownerID))
+						So(err, ShouldBeNil)
+						err = obj.Put(&tables.Object{Key: "key_1", OwnerID: ownerID, SchemaVersion: "1"})
+						So(err, ShouldNotBeNil)
+						So(err.Error(), ShouldContainSubstring, "no genesis object in the partition")
+					})
+
+					Convey("third object of the partition must reference the hash of $genesis/2 as its PrevHash", func() {
+						var genesisPair []tables.Object
+						err := cdb.GetAll(&tables.Object{
+							PartitionID: partitions[0].ID,
+							QueryParams: patchain.QueryParams{
+								OrderBy: "timestamp asc",
+							},
+						}, &genesisPair)
+						So(err, ShouldBeNil)
+						So(genesisPair[1].Key, ShouldEqual, "$genesis/2")
+						So(genesisPair[1].Hash, ShouldEqual, *objs[0].PrevHash)
+						So(genesisPair[1].PeerHash, ShouldResemble, genesisPair[1].ComputePeerHash(objs[0].Hash).PeerHash)
 					})
 
 					Convey("all objects must be chained", func() {
@@ -362,91 +398,6 @@ func TestObject(t *testing.T) {
 							So(err, ShouldBeNil)
 							So(newObj2.PeerHash, ShouldNotBeNil)
 							So(newObj2.PeerHash, ShouldResemble, newObj2.ComputePeerHash(o.Hash).PeerHash)
-						})
-					})
-				})
-
-				Reset(func() {
-					clearTable(cdb.GetConn().(*gorm.DB), "objects")
-				})
-			})
-
-			Convey(".MustPut", func() {
-				Convey("Should return error if value passed as object has invalid type", func() {
-					err := obj.MustPut("a_string")
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, "unsupported object type")
-				})
-
-				Convey("Should return error if no object is passed", func() {
-					err := obj.MustPut([]*tables.Object{})
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, "no object to put")
-				})
-
-				Convey("Should return error if an object does not have an owner id", func() {
-					objs := []*tables.Object{
-						{Key: "key_1", OwnerID: "some_owner_id"},
-						{Key: "key_2", CreatorID: "some_creator_id"},
-					}
-					err := obj.MustPut(objs)
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, "object 1: object does not have an owner")
-				})
-
-				Convey("Should return error if an object has a different owner than others", func() {
-					objs := []*tables.Object{
-						{Key: "key_1", OwnerID: "some_owner_id"},
-						{Key: "key_2", OwnerID: "some_other_owner_id"},
-					}
-					err := obj.MustPut(objs)
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, "object 1: has a different owner")
-				})
-
-				Convey("Should return error if owner has no partition", func() {
-					objs := []*tables.Object{
-						{Key: "key_1", OwnerID: "some_owner_id"},
-						{Key: "key_2", OwnerID: "some_owner_id"},
-					}
-					err := obj.MustPut(objs)
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, "failed to put object(s): owner has no partition")
-				})
-
-				Convey("Should successfully add initial chained objects", func() {
-					ownerID := util.RandString(10)
-					identity := MakeIdentityObject(ownerID, ownerID, "email@email.com", "some_pass", true)
-					err := obj.Create(identity)
-					So(err, ShouldBeNil)
-
-					partitions, err := obj.CreatePartitions(1, ownerID, ownerID)
-					So(err, ShouldBeNil)
-
-					objs := []*tables.Object{
-						{Key: "key_1", OwnerID: ownerID},
-						{Key: "key_2", OwnerID: ownerID},
-						{Key: "key_3", OwnerID: ownerID},
-					}
-					err = obj.MustPut(objs)
-					So(err, ShouldBeNil)
-
-					Convey("first object of the partition must the partition hash as the value of its prev hash", func() {
-						So(*objs[0].PrevHash, ShouldEqual, partitions[0].Hash)
-					})
-
-					Convey("all objects must be chained", func() {
-						So(objs[0].Hash, ShouldEqual, *objs[1].PrevHash)
-						So(objs[1].Hash, ShouldEqual, *objs[2].PrevHash)
-					})
-
-					Convey("Should successfully add an additional object to the non-empty partition", func() {
-						o := &tables.Object{Key: "key_1", OwnerID: ownerID}
-						err := obj.MustPut(o)
-						So(err, ShouldBeNil)
-
-						Convey("new object must have the hash of the previous object as the value of its prev hash", func() {
-							So(objs[2].Hash, ShouldEqual, *o.PrevHash)
 						})
 					})
 				})

@@ -74,3 +74,23 @@ func MakeChain(objects ...*tables.Object) {
 		}
 	}
 }
+
+// MakeGenesisPair creates two objects to be used as genesis object pairs
+func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*tables.Object {
+	pair := []*tables.Object{{
+		OwnerID:       ownerID,
+		CreatorID:     creatorID,
+		PartitionID:   partitionID,
+		Key:           "$genesis/1",
+		SchemaVersion: "1",
+		PrevHash:      util.StrToPtr(partitionHash),
+	}, {
+		OwnerID:       ownerID,
+		CreatorID:     creatorID,
+		PartitionID:   partitionID,
+		Key:           "$genesis/2",
+		SchemaVersion: "1",
+	}}
+	MakeChain(pair...)
+	return pair
+}

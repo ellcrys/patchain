@@ -64,5 +64,14 @@ func TestObjectUtil(t *testing.T) {
 				})
 			})
 		})
+
+		Convey(".MakeGenesisPair", func() {
+			pair := MakeGenesisPair("owner_id", "creator_id", "partition_id", "partition_hash")
+			So(pair[0].Key, ShouldEqual, "$genesis/1")
+			So(pair[1].Key, ShouldEqual, "$genesis/2")
+			So(*pair[0].PrevHash, ShouldEqual, "partition_hash")
+			So(pair[0].Hash, ShouldEqual, *pair[1].PrevHash)
+			So(pair[0].PeerHash, ShouldResemble, pair[0].ComputePeerHash(pair[1].Hash).PeerHash)
+		})
 	})
 }
