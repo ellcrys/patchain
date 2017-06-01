@@ -18,6 +18,10 @@ func TestObjectUtil(t *testing.T) {
 			So(MakePartitionKey("partition_a"), ShouldEqual, "partition/partition_a")
 		})
 
+		Convey(".MakeMappingKey", func() {
+			So(MakeMappingKey("mapping_a"), ShouldEqual, "mapping/mapping_a")
+		})
+
 		Convey(".MakePartitionObject", func() {
 			obj := MakePartitionObject("partition_a", "owner_id", "creator_id")
 			So(obj.CreatorID, ShouldEqual, "creator_id")
@@ -30,6 +34,15 @@ func TestObjectUtil(t *testing.T) {
 			So(obj.CreatorID, ShouldEqual, "creator_id")
 			So(obj.OwnerID, ShouldEqual, "owner_id")
 			So(obj.Key, ShouldEqual, MakeIdentityKey("lana@gmail.com"))
+			So(obj.ID, ShouldNotBeEmpty)
+			So(obj.Timestamp, ShouldNotBeEmpty)
+		})
+
+		Convey(".MakeMappingObject", func() {
+			obj := MakeMappingObject("owner_id", "mapping_a", `{ "name": "ref1" }`)
+			So(obj.CreatorID, ShouldEqual, "owner_id")
+			So(obj.OwnerID, ShouldEqual, "owner_id")
+			So(obj.Key, ShouldEqual, MakeMappingKey("mapping_a"))
 			So(obj.ID, ShouldNotBeEmpty)
 			So(obj.Timestamp, ShouldNotBeEmpty)
 		})

@@ -13,6 +13,9 @@ var (
 
 	// IdentityPrefix is the prefix of an identity key
 	IdentityPrefix = "identity/"
+
+	// MappingPrefix is the prefix of an object mappings
+	MappingPrefix = "mapping/"
 )
 
 // MakeIdentityKey creates an identity key
@@ -23,6 +26,11 @@ func MakeIdentityKey(email string) string {
 // MakePartitionKey creates a partition key
 func MakePartitionKey(name string) string {
 	return fmt.Sprintf("%s%s", PartitionPrefix, name)
+}
+
+// MakeMappingKey creates a mapping key
+func MakeMappingKey(name string) string {
+	return fmt.Sprintf("%s%s", MappingPrefix, name)
 }
 
 // MakePartitionObject creates an object that describes a partition
@@ -42,6 +50,17 @@ func MakeIdentityObject(ownerID, creatorID, email, password string, protected bo
 		CreatorID: creatorID,
 		Key:       MakeIdentityKey(email),
 		Protected: protected,
+	}
+	return po.Init()
+}
+
+// MakeMappingObject creates a mapping object
+func MakeMappingObject(ownerID, name, mappingJSON string) *tables.Object {
+	po := tables.Object{
+		OwnerID:   ownerID,
+		CreatorID: ownerID,
+		Key:       MakeMappingKey(name),
+		Value:     mappingJSON,
 	}
 	return po.Init()
 }
