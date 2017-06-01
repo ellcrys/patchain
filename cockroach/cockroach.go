@@ -259,7 +259,7 @@ func (c *DB) GetAll(q patchain.Query, out interface{}, options ...patchain.Optio
 }
 
 // Count returns a count of the number of documents that matches the query
-func (c *DB) Count(q patchain.Query, out *int64, options ...patchain.Option) error {
+func (c *DB) Count(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
 	return dbTx.GetConn().(*gorm.DB).
 		Scopes(c.getQueryModifiers(q)...).
