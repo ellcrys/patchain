@@ -111,7 +111,7 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 
 			// update the previous hash of the first of the new partitions
 			// to the hash of the last partition
-			partitionsI[0].(*tables.Object).PrevHash = util.StrToPtr(lastPartition.Hash)
+			partitionsI[0].(*tables.Object).PrevHash = lastPartition.Hash
 			MakeChain(partitions...)
 			if err := o.db.CreateBulk(partitionsI, dbOptions...); err != nil {
 				return errors.Wrap(err, "failed to create partition")
@@ -306,7 +306,7 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 
 			// assign hash of last object as the PrevHash value
 			// of the first object, chain the  objects and create them
-			objects[0].PrevHash = util.StrToPtr(lastObj.Hash)
+			objects[0].PrevHash = lastObj.Hash
 			MakeChain(objects...)
 			for _, o := range objects {
 				if err := dbTx.Create(o, options...); err != nil {
@@ -316,7 +316,7 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 
 			// update peer hash of last object
 			lastObj.ComputePeerHash(objects[0].Hash)
-			if err := dbTx.UpdatePeerHash(lastObj, *lastObj.PeerHash, options...); err != nil {
+			if err := dbTx.UpdatePeerHash(lastObj, lastObj.PeerHash, options...); err != nil {
 				return errors.Wrap(err, "failed to update last object peer hash")
 			}
 

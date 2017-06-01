@@ -56,11 +56,11 @@ func TestObject(t *testing.T) {
 					Hash:        "abc",
 				}
 				obj.Init()
-				So(obj.PeerHash, ShouldBeNil)
+				So(obj.PeerHash, ShouldBeEmpty)
 				nextObjHash := "some_hash"
 				obj.ComputePeerHash(nextObjHash)
 				peerHash := util.Sha256(fmt.Sprintf("%s/%s", obj.Hash, nextObjHash))
-				So(obj.PeerHash, ShouldResemble, &peerHash)
+				So(obj.PeerHash, ShouldResemble, peerHash)
 			})
 		})
 	})

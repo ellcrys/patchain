@@ -44,13 +44,13 @@ func TestObjectUtil(t *testing.T) {
 
 				Convey("All objects with a preceding object must reference the hash of the previous object", func() {
 					MakeChain(objs...)
-					So(*objs[0].PrevHash, ShouldEqual, util.Sha256(objs[0].ID))
-					So(objs[0].Hash, ShouldEqual, *objs[1].PrevHash)
-					So(objs[1].Hash, ShouldEqual, *objs[2].PrevHash)
+					So(objs[0].PrevHash, ShouldEqual, util.Sha256(objs[0].ID))
+					So(objs[0].Hash, ShouldEqual, objs[1].PrevHash)
+					So(objs[1].Hash, ShouldEqual, objs[2].PrevHash)
 					MakeChain(objs...)
-					So(*objs[0].PrevHash, ShouldEqual, util.Sha256(objs[0].ID))
-					So(objs[0].Hash, ShouldEqual, *objs[1].PrevHash)
-					So(objs[1].Hash, ShouldEqual, *objs[2].PrevHash)
+					So(objs[0].PrevHash, ShouldEqual, util.Sha256(objs[0].ID))
+					So(objs[0].Hash, ShouldEqual, objs[1].PrevHash)
+					So(objs[1].Hash, ShouldEqual, objs[2].PrevHash)
 				})
 
 				Convey("All objects with an object ahead must have a valid peer hash", func() {
@@ -59,7 +59,7 @@ func TestObjectUtil(t *testing.T) {
 					So(objs[1].PeerHash, ShouldResemble, objs[1].ComputePeerHash(objs[2].Hash).PeerHash)
 
 					Convey("An object with no object ahead must not have a peer hash", func() {
-						So(objs[2].PeerHash, ShouldBeNil)
+						So(objs[2].PeerHash, ShouldBeEmpty)
 					})
 				})
 			})
@@ -69,8 +69,8 @@ func TestObjectUtil(t *testing.T) {
 			pair := MakeGenesisPair("owner_id", "creator_id", "partition_id", "partition_hash")
 			So(pair[0].Key, ShouldEqual, "$genesis/1")
 			So(pair[1].Key, ShouldEqual, "$genesis/2")
-			So(*pair[0].PrevHash, ShouldEqual, "partition_hash")
-			So(pair[0].Hash, ShouldEqual, *pair[1].PrevHash)
+			So(pair[0].PrevHash, ShouldEqual, "partition_hash")
+			So(pair[0].Hash, ShouldEqual, pair[1].PrevHash)
 			So(pair[0].PeerHash, ShouldResemble, pair[0].ComputePeerHash(pair[1].Hash).PeerHash)
 		})
 	})

@@ -68,7 +68,7 @@ func MakeChain(objects ...*tables.Object) {
 		object.Init().ComputeHash()
 		if i > 0 {
 			prevObj := objects[i-1]
-			object.PrevHash = util.StrToPtr(prevObj.Hash)
+			object.PrevHash = prevObj.Hash
 			object.ComputeHash()
 			prevObj.ComputePeerHash(object.Hash)
 		}
@@ -83,7 +83,7 @@ func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*t
 		PartitionID:   partitionID,
 		Key:           "$genesis/1",
 		SchemaVersion: "1",
-		PrevHash:      util.StrToPtr(partitionHash),
+		PrevHash:      partitionHash,
 	}, {
 		OwnerID:       ownerID,
 		CreatorID:     creatorID,

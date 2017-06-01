@@ -70,7 +70,7 @@ func TestObject(t *testing.T) {
 	Convey("Object", t, func() {
 		Convey(".Create", func() {
 			Convey("Should initialize and create an object", func() {
-				o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.StrToPtr(util.UUID4())}
+				o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.UUID4()}
 				So(o.ID, ShouldBeEmpty)
 				So(o.Timestamp, ShouldEqual, 0)
 				So(o.Hash, ShouldBeEmpty)
@@ -82,7 +82,7 @@ func TestObject(t *testing.T) {
 
 				Convey("Should create duplicate key object with same key", func() {
 					o.ID = util.UUID4()
-					o.PrevHash = util.StrToPtr(util.UUID4())
+					o.PrevHash = util.UUID4()
 					err := obj.Create(o)
 					So(err, ShouldBeNil)
 					count := int64(0)
@@ -98,7 +98,7 @@ func TestObject(t *testing.T) {
 
 			Convey(".CreateOnce", func() {
 				Convey("Should initialize and create an object", func() {
-					o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.StrToPtr(util.UUID4())}
+					o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.UUID4()}
 					So(o.ID, ShouldBeEmpty)
 					So(o.Timestamp, ShouldEqual, 0)
 					So(o.Hash, ShouldBeEmpty)
@@ -110,7 +110,7 @@ func TestObject(t *testing.T) {
 
 					Convey("Should not create duplicate key object and also return no error", func() {
 						o.ID = util.UUID4()
-						o.PrevHash = util.StrToPtr(util.UUID4())
+						o.PrevHash = util.UUID4()
 						err := obj.CreateOnce(o)
 						So(err, ShouldBeNil)
 						count := int64(0)
@@ -153,12 +153,12 @@ func TestObject(t *testing.T) {
 					})
 
 					Convey("first partition prev hash must be equal to the SHA256 hash of the ID", func() {
-						So(*partitions[0].PrevHash, ShouldEqual, util.Sha256(partitions[0].ID))
+						So(partitions[0].PrevHash, ShouldEqual, util.Sha256(partitions[0].ID))
 					})
 
 					Convey("partitions must be chained to the partition before it", func() {
-						So(*partitions[1].PrevHash, ShouldEqual, partitions[0].Hash)
-						So(*partitions[2].PrevHash, ShouldEqual, partitions[1].Hash)
+						So(partitions[1].PrevHash, ShouldEqual, partitions[0].Hash)
+						So(partitions[2].PrevHash, ShouldEqual, partitions[1].Hash)
 					})
 
 					Convey("New partition must reference the prev hash of the last included partition", func() {
@@ -167,8 +167,8 @@ func TestObject(t *testing.T) {
 						So(len(latestPartitions), ShouldEqual, 2)
 
 						Convey("first partition must reference the prev hash of the last partition", func() {
-							So(*latestPartitions[0].PrevHash, ShouldEqual, partitions[2].Hash)
-							So(*latestPartitions[1].PrevHash, ShouldEqual, latestPartitions[0].Hash)
+							So(latestPartitions[0].PrevHash, ShouldEqual, partitions[2].Hash)
+							So(latestPartitions[1].PrevHash, ShouldEqual, latestPartitions[0].Hash)
 						})
 					})
 				})
@@ -186,12 +186,12 @@ func TestObject(t *testing.T) {
 					So(len(partitions), ShouldEqual, 3)
 
 					Convey("first partition prev hash must be equal to the SHA256 hash of the ID", func() {
-						So(*partitions[0].PrevHash, ShouldEqual, util.Sha256(partitions[0].ID))
+						So(partitions[0].PrevHash, ShouldEqual, util.Sha256(partitions[0].ID))
 					})
 
 					Convey("partitions must be chained to the partition before it", func() {
-						So(*partitions[1].PrevHash, ShouldEqual, partitions[0].Hash)
-						So(*partitions[2].PrevHash, ShouldEqual, partitions[1].Hash)
+						So(partitions[1].PrevHash, ShouldEqual, partitions[0].Hash)
+						So(partitions[2].PrevHash, ShouldEqual, partitions[1].Hash)
 					})
 
 					Convey("New partition must reference the prev hash of the last included partition", func() {
@@ -200,8 +200,8 @@ func TestObject(t *testing.T) {
 						So(len(latestPartitions), ShouldEqual, 2)
 
 						Convey("first partition must reference the prev hash of the last partition", func() {
-							So(*latestPartitions[0].PrevHash, ShouldEqual, partitions[2].Hash)
-							So(*latestPartitions[1].PrevHash, ShouldEqual, latestPartitions[0].Hash)
+							So(latestPartitions[0].PrevHash, ShouldEqual, partitions[2].Hash)
+							So(latestPartitions[1].PrevHash, ShouldEqual, latestPartitions[0].Hash)
 						})
 					})
 				})
@@ -219,9 +219,9 @@ func TestObject(t *testing.T) {
 				})
 
 				Convey("Should return last added object matching the query", func() {
-					o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.StrToPtr(util.UUID4())}
-					o2 := &tables.Object{Key: "some_key", Value: "some_value_2", PrevHash: util.StrToPtr(util.UUID4())}
-					o3 := &tables.Object{Key: "some_key", Value: "some_value_3", PrevHash: util.StrToPtr(util.UUID4())}
+					o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.UUID4()}
+					o2 := &tables.Object{Key: "some_key", Value: "some_value_2", PrevHash: util.UUID4()}
+					o3 := &tables.Object{Key: "some_key", Value: "some_value_3", PrevHash: util.UUID4()}
 					err := obj.Create(o)
 					So(err, ShouldBeNil)
 					err = obj.Create(o2)
@@ -247,8 +247,8 @@ func TestObject(t *testing.T) {
 				})
 
 				Convey("Should successfully fetch all objects", func() {
-					o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.StrToPtr(util.UUID4())}
-					o2 := &tables.Object{Key: "some_key", Value: "some_value_2", PrevHash: util.StrToPtr(util.UUID4())}
+					o := &tables.Object{Key: "some_key", Value: "some_value", PrevHash: util.UUID4()}
+					o2 := &tables.Object{Key: "some_key", Value: "some_value_2", PrevHash: util.UUID4()}
 					err := obj.Create(o)
 					So(err, ShouldBeNil)
 					err = obj.Create(o2)
@@ -365,13 +365,13 @@ func TestObject(t *testing.T) {
 						}, &genesisPair)
 						So(err, ShouldBeNil)
 						So(genesisPair[1].Key, ShouldEqual, "$genesis/2")
-						So(genesisPair[1].Hash, ShouldEqual, *objs[0].PrevHash)
+						So(genesisPair[1].Hash, ShouldEqual, objs[0].PrevHash)
 						So(genesisPair[1].PeerHash, ShouldResemble, genesisPair[1].ComputePeerHash(objs[0].Hash).PeerHash)
 					})
 
 					Convey("all objects must be chained", func() {
-						So(objs[0].Hash, ShouldEqual, *objs[1].PrevHash)
-						So(objs[1].Hash, ShouldEqual, *objs[2].PrevHash)
+						So(objs[0].Hash, ShouldEqual, objs[1].PrevHash)
+						So(objs[1].Hash, ShouldEqual, objs[2].PrevHash)
 					})
 
 					Convey("all objects with an object after it must have a valid peer hash", func() {
@@ -379,7 +379,7 @@ func TestObject(t *testing.T) {
 						So(objs[1].PeerHash, ShouldResemble, objs[1].ComputePeerHash(objs[2].Hash).PeerHash)
 
 						Convey("an object with no peer must have no peer hash", func() {
-							So(objs[2].PeerHash, ShouldBeNil)
+							So(objs[2].PeerHash, ShouldBeEmpty)
 						})
 					})
 
@@ -389,7 +389,7 @@ func TestObject(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						Convey("new object must have the hash of the previous object as the value of its prev hash", func() {
-							So(objs[2].Hash, ShouldEqual, *o.PrevHash)
+							So(objs[2].Hash, ShouldEqual, o.PrevHash)
 						})
 
 						Convey("preceding object must have a peer hash", func() {
