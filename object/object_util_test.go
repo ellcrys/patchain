@@ -22,6 +22,22 @@ func TestObjectUtil(t *testing.T) {
 			So(MakeMappingKey("mapping_a"), ShouldEqual, "$mapping/mapping_a")
 		})
 
+		Convey(".SplitKey", func() {
+			Convey("Should return error if key format is invalid", func() {
+				_, _, err := SplitKey("some_invalid_key_format")
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "invalid key format")
+			})
+
+			Convey("Should successfully split key", func() {
+				key := MakeMappingKey("mapping_a")
+				prefix, name, err := SplitKey(key)
+				So(err, ShouldBeNil)
+				So(prefix+"/", ShouldEqual, MappingPrefix)
+				So(name, ShouldEqual, "mapping_a")
+			})
+		})
+
 		Convey(".MakePartitionObject", func() {
 			obj := MakePartitionObject("partition_a", "owner_id", "creator_id")
 			So(obj.CreatorID, ShouldEqual, "creator_id")
