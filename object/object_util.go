@@ -9,13 +9,13 @@ import (
 
 var (
 	// PartitionPrefix is the prefix of a partition key
-	PartitionPrefix = "partition/"
+	PartitionPrefix = "$partition/"
 
 	// IdentityPrefix is the prefix of an identity key
-	IdentityPrefix = "identity/"
+	IdentityPrefix = "$identity/"
 
 	// MappingPrefix is the prefix of an object mappings
-	MappingPrefix = "mapping/"
+	MappingPrefix = "$mapping/"
 )
 
 // MakeIdentityKey creates an identity key

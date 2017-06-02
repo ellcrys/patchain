@@ -11,15 +11,15 @@ import (
 func TestObjectUtil(t *testing.T) {
 	Convey("ObjectUtil", t, func() {
 		Convey(".MakeIdentityKey", func() {
-			So(MakeIdentityKey("lana@gmail.com"), ShouldEqual, "identity/lana@gmail.com")
+			So(MakeIdentityKey("lana@gmail.com"), ShouldEqual, "$identity/lana@gmail.com")
 		})
 
 		Convey(".MakePartitionKey", func() {
-			So(MakePartitionKey("partition_a"), ShouldEqual, "partition/partition_a")
+			So(MakePartitionKey("partition_a"), ShouldEqual, "$partition/partition_a")
 		})
 
 		Convey(".MakeMappingKey", func() {
-			So(MakeMappingKey("mapping_a"), ShouldEqual, "mapping/mapping_a")
+			So(MakeMappingKey("mapping_a"), ShouldEqual, "$mapping/mapping_a")
 		})
 
 		Convey(".MakePartitionObject", func() {
