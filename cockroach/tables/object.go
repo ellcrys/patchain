@@ -14,18 +14,18 @@ var SchemaVersion = "1"
 // Object represents a transaction created by an identity
 type Object struct {
 	ID            string               `json:"id,omitempty" structs:"id,omitempty" mapstructure:"id,omitempty" gorm:"type:varchar(36);primary_key"`
-	OwnerID       string               `json:"owner_id,omitempty" structs:"ownerId,omitempty" mapstructure:"ownerId,omitempty" gorm:"type:varchar(36)"`
-	CreatorID     string               `json:"creator_id,omitempty" structs:"creatorId,omitempty" mapstructure:"creatorId,omitempty" gorm:"type:varchar(36);index:idx_creator_id"`
-	PartitionID   string               `json:"partition_id,omitempty" structs:"partitionId,omitempty" mapstructure:"partitionId,omitempty" gorm:"type:varchar(36);index:idx_prtn_id"`
+	OwnerID       string               `json:"owner_id,omitempty" structs:"owner_id,omitempty" mapstructure:"owner_id,omitempty" gorm:"type:varchar(36)"`
+	CreatorID     string               `json:"creator_id,omitempty" structs:"creator_id,omitempty" mapstructure:"creator_id,omitempty" gorm:"type:varchar(36);index:idx_creator_id"`
+	PartitionID   string               `json:"partition_id,omitempty" structs:"partition_id,omitempty" mapstructure:"partition_id,omitempty" gorm:"type:varchar(36);index:idx_prtn_id"`
 	Key           string               `json:"key,omitempty" structs:"key,omitempty" mapstructure:"key,omitempty" gorm:"type:varchar(64);index:idx_key"`
 	Value         string               `json:"value,omitempty" structs:"value,omitempty" mapstructure:"value,omitempty" gorm:"type:varchar(64000);index:idx_value"`
 	Protected     bool                 `json:"protected,omitempty" structs:"protected,omitempty" mapstructure:"protected,omitempty" gorm:"index:idx_protected"`
-	RefOnly       bool                 `json:"ref_only,omitempty" structs:"refOnly,omitempty" mapstructure:"refOnly,omitempty" gorm:"index:idx_ref_only"`
+	RefOnly       bool                 `json:"ref_only,omitempty" structs:"ref_only,omitempty" mapstructure:"ref_only,omitempty" gorm:"index:idx_ref_only"`
 	Timestamp     int64                `json:"timestamp,omitempty" structs:"timestamp,omitempty" mapstructure:"timestamp,omitempty" gorm:"index:idx_timestamp"`
-	PrevHash      string               `json:"prev_hash,omitempty" structs:"prevHash,omitempty" mapstructure:"prevHash,omitempty" gorm:"type:varchar(64);index:idx_prev_hash"`
-	PeerHash      string               `json:"peer_hash,omitempty" structs:"peerHash,omitempty" mapstructure:"peerHash,omitempty" gorm:"type:varchar(64);index:idx_peer_hash"`
+	PrevHash      string               `json:"prev_hash,omitempty" structs:"prev_hash,omitempty" mapstructure:"prev_hash,omitempty" gorm:"type:varchar(64);index:idx_prev_hash"`
+	PeerHash      string               `json:"peer_hash,omitempty" structs:"peer_hash,omitempty" mapstructure:"peer_hash,omitempty" gorm:"type:varchar(64);index:idx_peer_hash"`
 	Hash          string               `json:"hash,omitempty" structs:"hash,omitempty" mapstructure:"hash,omitempty" gorm:"type:varchar(64);index:idx_hash"`
-	SchemaVersion string               `json:"schema_version,omitempty" structs:"schemaVersion,omitempty" mapstructure:"schemaVersion,omitempty" gorm:"type:varchar(64);index:idx_sch_ver"`
+	SchemaVersion string               `json:"schema_version,omitempty" structs:"schema_version,omitempty" mapstructure:"schema_version,omitempty" gorm:"type:varchar(64);index:idx_sch_ver"`
 	Ref1          string               `json:"ref1,omitempty" structs:"ref1,omitempty" mapstructure:"ref1,omitempty" gorm:"type:varchar(64);index:idx_ref1"`
 	Ref2          string               `json:"ref2,omitempty" structs:"ref2,omitempty" mapstructure:"ref2,omitempty" gorm:"type:varchar(64);index:idx_ref2"`
 	Ref3          string               `json:"ref3,omitempty" structs:"ref3,omitempty" mapstructure:"ref3,omitempty" gorm:"type:varchar(64);index:idx_ref3"`
