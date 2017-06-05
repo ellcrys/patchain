@@ -19,7 +19,7 @@ type Object struct {
 	PartitionID   string               `json:"partition_id,omitempty" structs:"partition_id,omitempty" mapstructure:"partition_id,omitempty" gorm:"type:varchar(36);index:idx_prtn_id"`
 	Key           string               `json:"key,omitempty" structs:"key,omitempty" mapstructure:"key,omitempty" gorm:"type:varchar(64);index:idx_key"`
 	Value         string               `json:"value,omitempty" structs:"value,omitempty" mapstructure:"value,omitempty" gorm:"type:varchar(64000);index:idx_value"`
-	Protected     bool                 `json:"protected,omitempty" structs:"protected,omitempty" mapstructure:"protected,omitempty" gorm:"index:idx_protected"`
+	Protected     bool                 `json:"protected" structs:"protected" mapstructure:"protected" gorm:"index:idx_protected"`
 	RefOnly       bool                 `json:"ref_only,omitempty" structs:"ref_only,omitempty" mapstructure:"ref_only,omitempty" gorm:"index:idx_ref_only"`
 	Timestamp     int64                `json:"timestamp,omitempty" structs:"timestamp,omitempty" mapstructure:"timestamp,omitempty" gorm:"index:idx_timestamp"`
 	PrevHash      string               `json:"prev_hash,omitempty" structs:"prev_hash,omitempty" mapstructure:"prev_hash,omitempty" gorm:"type:varchar(64);index:idx_prev_hash"`
