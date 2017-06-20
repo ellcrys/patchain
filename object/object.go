@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ellcrys/util"
-	"github.com/jinzhu/copier"
 	"github.com/ellcrys/cocoon/core/common"
 	"github.com/ellcrys/patchain"
 	"github.com/ellcrys/patchain/cockroach/tables"
+	"github.com/ellcrys/util"
+	"github.com/jinzhu/copier"
 	"github.com/ncodes/redo"
 	"github.com/pkg/errors"
 )
@@ -36,7 +36,6 @@ func (o *Object) CreateOnce(obj *tables.Object) error {
 	if err != nil {
 		if common.CompareErr(err, patchain.ErrNotFound) == 0 {
 			err = o.Create(obj)
-			return err
 		}
 		return err
 	}
@@ -45,7 +44,7 @@ func (o *Object) CreateOnce(obj *tables.Object) error {
 }
 
 // CreatePartitions creates partitions. Every partition is chained to the
-// one before it by sharing using the hash of the previous partition as the new
+// one before it by sharing the hash of the previous partition as the new
 // partition's prev hash value.
 func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ...patchain.Option) ([]*tables.Object, error) {
 
@@ -89,7 +88,7 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 				}
 			}
 
-			// last partition, add the new partitions
+			// if no last partition, add the new partitions
 			partitionsI, _ := util.ToSliceInterface(partitions)
 			if lastPartition == nil {
 
@@ -218,11 +217,7 @@ func (o *Object) RequiresRetry(err error) bool {
 func (o *Object) MustPut(objs interface{}, options ...patchain.Option) error {
 	var err error
 	err = o.Retry(func(stop func()) error {
-		err = o.Put(objs, options...)
-		if err != nil {
-			return err
-		}
-		return nil
+		return o.Put(objs, options...)
 	})
 	return err
 }
@@ -283,7 +278,7 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 				return errors.Wrap(err, "failed to get owner's partition")
 			}
 
-			// select a partition
+			// select a random partition
 			var selectedPartition = o.selectPartition(partitions)
 			if selectedPartition == nil {
 				return fmt.Errorf("owner has no partition")
@@ -324,7 +319,5 @@ func (o *Object) Put(objs interface{}, options ...patchain.Option) error {
 		})
 	}
 
-	err := putTxFunc()
-
-	return errors.Wrap(err, "failed to put object(s)")
+	return errors.Wrap(putTxFunc(), "failed to put object(s)")
 }

@@ -5,16 +5,16 @@ import (
 
 	"strings"
 
+	"github.com/ellcrys/cocoon/core/common"
+	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	"github.com/ellcrys/util"
 	"github.com/fatih/structs"
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres dialect
 	"github.com/jinzhu/inflection"
-	"github.com/ellcrys/cocoon/core/common"
 	"github.com/ncodes/jsq"
-	"github.com/ellcrys/patchain"
-	"github.com/ellcrys/patchain/cockroach/tables"
 	logging "github.com/op/go-logging"
 	"github.com/pkg/errors"
 )
@@ -131,7 +131,7 @@ func (c *DB) CreateTables() error {
 
 	// create object table
 	if err := c.createTableIfNotExist(&tables.Object{}); err != nil {
-		return errors.Wrap(err, "failed to create/modify object table")
+		return errors.Wrap(err, "failed to create tables")
 	}
 
 	return nil

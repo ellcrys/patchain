@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ellcrys/patchain"
 	"github.com/ellcrys/util"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -61,6 +62,19 @@ func TestObject(t *testing.T) {
 				obj.ComputePeerHash(nextObjHash)
 				peerHash := util.Sha256(fmt.Sprintf("%s/%s", obj.Hash, nextObjHash))
 				So(obj.PeerHash, ShouldResemble, peerHash)
+			})
+		})
+
+		Convey(".GetQueryParams", func() {
+			Convey("Should return expected query params", func() {
+				obj := Object{
+					QueryParams: patchain.QueryParams{
+						Expr: patchain.Expr{
+							Expr: `{ "a": 2 }`,
+						},
+					},
+				}
+				So(&obj.QueryParams, ShouldResemble, obj.GetQueryParams())
 			})
 		})
 	})

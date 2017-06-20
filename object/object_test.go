@@ -173,6 +173,16 @@ func TestObject(t *testing.T) {
 					})
 				})
 
+				Convey("Successfully create partitions using a external db object", func() {
+					dbOp := patchain.UseDBOption{
+						DB:     cdb.NewDB().Begin(),
+						Finish: true,
+					}
+					partitions, err := obj.CreatePartitions(1, "owner_id", "creator_id", &dbOp)
+					So(err, ShouldBeNil)
+					So(len(partitions), ShouldEqual, 1)
+				})
+
 				Reset(func() {
 					clearTable(cdb.GetConn().(*gorm.DB), "objects")
 				})
@@ -274,6 +284,38 @@ func TestObject(t *testing.T) {
 					selected := obj.selectPartition(partitions)
 					So(selected, ShouldNotBeNil)
 					So(selected, ShouldResemble, partitions[0])
+				})
+
+				Convey("Should return a partition if more than one partitions exists", func() {
+					partitions := []*tables.Object{{ID: "some_id"}, {ID: "some_id2"}}
+					selected := obj.selectPartition(partitions)
+					So(selected, ShouldNotBeNil)
+					So(partitions, ShouldContain, selected)
+				})
+
+				Reset(func() {
+					clearTable(cdb.GetConn().(*gorm.DB), "objects")
+				})
+			})
+
+			Convey(".MustPut", func() {
+				Convey("Should successfully put an object", func() {
+					ownerID := util.RandString(10)
+					identity := MakeIdentityObject(ownerID, ownerID, "email@email.com", "some_pass", true)
+					err := obj.Create(identity)
+					So(err, ShouldBeNil)
+
+					_, err = obj.CreatePartitions(1, ownerID, ownerID)
+					So(err, ShouldBeNil)
+
+					objs := []*tables.Object{
+						{Key: "key_1", OwnerID: ownerID, SchemaVersion: "1"},
+						{Key: "key_2", OwnerID: ownerID, SchemaVersion: "1"},
+						{Key: "key_3", OwnerID: ownerID, SchemaVersion: "1"},
+					}
+
+					err = obj.MustPut(objs)
+					So(err, ShouldBeNil)
 				})
 
 				Reset(func() {
@@ -400,6 +442,38 @@ func TestObject(t *testing.T) {
 							So(newObj2.PeerHash, ShouldResemble, newObj2.ComputePeerHash(o.Hash).PeerHash)
 						})
 					})
+				})
+
+				Convey("Should successfully add objects with an external db connection", func() {
+					ownerID := util.RandString(10)
+					identity := MakeIdentityObject(ownerID, ownerID, "email@email.com", "some_pass", true)
+					err := obj.Create(identity)
+					So(err, ShouldBeNil)
+
+					partitions, err := obj.CreatePartitions(1, ownerID, ownerID)
+					So(err, ShouldBeNil)
+
+					objs := []*tables.Object{
+						{Key: "key_1", OwnerID: ownerID, SchemaVersion: "1"},
+					}
+
+					dbOp := patchain.UseDBOption{
+						DB:     cdb.NewDB().Begin(),
+						Finish: true,
+					}
+
+					err = obj.Put(objs, &dbOp)
+					So(err, ShouldBeNil)
+
+					var existingObjs []tables.Object
+					err = cdb.GetAll(&tables.Object{
+						PartitionID: partitions[0].ID,
+						QueryParams: patchain.QueryParams{
+							OrderBy: "timestamp asc",
+						},
+					}, &existingObjs)
+
+					So(existingObjs, ShouldHaveLength, 3)
 				})
 
 				Reset(func() {

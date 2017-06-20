@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ellcrys/util"
 	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/util"
 )
 
 // SchemaVersion describes the version the object's schema/field make up.
@@ -65,7 +65,6 @@ func (o *Object) Init() *Object {
 
 // ComputeHash computes a SHA256 has of the object
 func (o *Object) ComputeHash() *Object {
-
 	if o.SchemaVersion == "1" {
 		o.Hash = util.Sha256(fmt.Sprintf("%s/%s/%s/%s/%s/%s/%v/%v/%d/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
 			o.ID, o.OwnerID, o.CreatorID, o.PartitionID,

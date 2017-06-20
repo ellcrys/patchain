@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/ellcrys/patchain"
-	"github.com/ellcrys/patchain/cockroach/tables"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -65,7 +65,7 @@ func TestCockroach(t *testing.T) {
 
 		Convey(".Connect", func() {
 			Convey("Should successfully connect to database", func() {
-				err := cdb.Connect(10, 5)
+				err := cdb.Connect(0, 5)
 				So(err, ShouldBeNil)
 
 				Convey(".GetConn", func() {
@@ -82,9 +82,16 @@ func TestCockroach(t *testing.T) {
 						newConn, err := gorm.Open("postgres", conStrWithDB)
 						So(err, ShouldBeNil)
 						So(existingConn.(*gorm.DB), ShouldNotResemble, newConn)
-						cdb.SetConn(newConn)
+						err = cdb.SetConn(newConn)
+						So(err, ShouldBeNil)
 						existingConn = cdb.GetConn()
 						So(existingConn.(*gorm.DB), ShouldResemble, newConn)
+					})
+
+					Convey("Should return error if type is invalid", func() {
+						err := cdb.SetConn("invalid_type")
+						So(err, ShouldNotBeNil)
+						So(err.Error(), ShouldEqual, "connection type not supported. Requires *gorm.DB")
 					})
 				})
 
@@ -188,6 +195,98 @@ func TestCockroach(t *testing.T) {
 
 						cdb.db.Model(&o).Where(&o).Count(&count)
 						So(count, ShouldEqual, 1)
+					})
+
+					Reset(func() {
+						clearTable(cdb.GetConn().(*gorm.DB), "objects")
+					})
+				})
+
+				Convey(".TransactWithDB", func() {
+					Convey("Should rollback a transaction to create an object", func() {
+						newDbTx := cdb.NewDB().Begin()
+						cdb.TransactWithDB(newDbTx, false, func(db patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
+							o := tables.Object{ID: util.UUID4()}
+							err := db.Create(&o)
+							So(err, ShouldBeNil)
+							err = rollback()
+							So(err, ShouldBeNil)
+
+							o2 := tables.Object{}
+							err = cdb.db.Where(&o).Find(&o2).Error
+							So(err, ShouldNotBeNil)
+							So(err, ShouldResemble, gorm.ErrRecordNotFound)
+							return nil
+						})
+					})
+
+					Convey("Should commit a transaction to create an object", func() {
+						newDbTx := cdb.NewDB().Begin()
+						cdb.TransactWithDB(newDbTx, false, func(db patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
+							o := tables.Object{ID: util.UUID4()}
+							err := db.Create(&o)
+							So(err, ShouldBeNil)
+							err = commit()
+							So(err, ShouldBeNil)
+
+							o2 := tables.Object{}
+							err = cdb.db.Where(&o).Find(&o2).Error
+							So(err, ShouldBeNil)
+							So(o, ShouldResemble, o2)
+							return nil
+						})
+					})
+
+					Convey("Should rollback a transaction to create an object if tx callback returns an error and rollback is not implicitly called", func() {
+						newDbTx := cdb.NewDB().Begin()
+						o := tables.Object{ID: util.UUID4()}
+						cdb.TransactWithDB(newDbTx, true, func(db patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
+							err := db.Create(&o)
+							So(err, ShouldBeNil)
+							return fmt.Errorf("cause a rollback")
+						})
+						o2 := tables.Object{}
+						err = cdb.db.Where(&o).Find(&o2).Error
+						So(err, ShouldNotBeNil)
+						So(err, ShouldResemble, gorm.ErrRecordNotFound)
+					})
+
+					Convey("Should commit a transaction to create an object if tx callback returns nil and commit is not implicitly called", func() {
+						newDbTx := cdb.NewDB().Begin()
+						o := tables.Object{ID: util.UUID4()}
+						cdb.TransactWithDB(newDbTx, true, func(db patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
+							err := db.Create(&o)
+							So(err, ShouldBeNil)
+							return nil
+						})
+						o2 := tables.Object{}
+						err = cdb.db.Where(&o).Find(&o2).Error
+						So(err, ShouldBeNil)
+						So(o, ShouldResemble, o2)
+					})
+
+					Reset(func() {
+						clearTable(cdb.GetConn().(*gorm.DB), "objects")
+					})
+				})
+
+				Convey(".UpdatePeerHash", func() {
+					Convey("Should successfully update peer hash", func() {
+						o := tables.Object{ID: util.UUID4()}
+						err := cdb.Create(&o)
+						So(err, ShouldBeNil)
+						So(o.PeerHash, ShouldBeEmpty)
+						err = cdb.UpdatePeerHash(o, "peer_hash_abc")
+						So(err, ShouldBeNil)
+
+						o = tables.Object{}
+						err = cdb.db.Where(&o).Find(&o).Error
+						So(err, ShouldBeNil)
+						So(o.PeerHash, ShouldEqual, "peer_hash_abc")
+					})
+
+					Reset(func() {
+						clearTable(cdb.GetConn().(*gorm.DB), "objects")
 					})
 				})
 
