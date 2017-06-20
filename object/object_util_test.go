@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/ellcrys/util"
-	"github.com/ncodes/patchain/cockroach/tables"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

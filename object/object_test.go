@@ -9,9 +9,9 @@ import (
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/gorm"
 
-	"github.com/ncodes/patchain"
-	"github.com/ncodes/patchain/cockroach"
-	"github.com/ncodes/patchain/cockroach/tables"
+	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/patchain/cockroach"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

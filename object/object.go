@@ -7,9 +7,9 @@ import (
 
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/copier"
-	"github.com/ncodes/cocoon/core/common"
-	"github.com/ncodes/patchain"
-	"github.com/ncodes/patchain/cockroach/tables"
+	"github.com/ellcrys/cocoon/core/common"
+	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	"github.com/ncodes/redo"
 	"github.com/pkg/errors"
 )

@@ -9,8 +9,8 @@ import (
 	"github.com/ellcrys/util"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/ncodes/patchain"
-	"github.com/ncodes/patchain/cockroach/tables"
+	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

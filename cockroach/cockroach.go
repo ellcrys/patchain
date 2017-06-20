@@ -11,10 +11,10 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres dialect
 	"github.com/jinzhu/inflection"
-	"github.com/ncodes/cocoon/core/common"
+	"github.com/ellcrys/cocoon/core/common"
 	"github.com/ncodes/jsq"
-	"github.com/ncodes/patchain"
-	"github.com/ncodes/patchain/cockroach/tables"
+	"github.com/ellcrys/patchain"
+	"github.com/ellcrys/patchain/cockroach/tables"
 	logging "github.com/op/go-logging"
 	"github.com/pkg/errors"
 )

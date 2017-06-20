@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ellcrys/util"
-	"github.com/ncodes/patchain"
+	"github.com/ellcrys/patchain"
 )
 
 // SchemaVersion describes the version the object's schema/field make up.
