@@ -107,8 +107,8 @@ func MakeChain(objects ...*tables.Object) {
 }
 
 // MakeGenesisPair creates two objects to be used as genesis object pairs.
-// The first object in the pair must have its PrevHash field set to the partition hash
-// in the format 'PartitionPrefix+PartitionHash'.
+// The first object in the pair must have its PrevHash field set to the SHA256 hash of the
+// partition prefix and the partition hash (SHA256('PartitionPrefix+PartitionHash')).
 func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*tables.Object {
 	pair := []*tables.Object{{
 		OwnerID:       ownerID,
@@ -116,7 +116,7 @@ func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*t
 		PartitionID:   partitionID,
 		Key:           "$genesis/1",
 		SchemaVersion: "1",
-		PrevHash:      PartitionPrefix + partitionHash,
+		PrevHash:      util.Sha256(PartitionPrefix + partitionHash),
 	}, {
 		OwnerID:       ownerID,
 		CreatorID:     creatorID,
