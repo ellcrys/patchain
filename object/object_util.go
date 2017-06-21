@@ -5,8 +5,8 @@ import (
 
 	"strings"
 
-	"github.com/ellcrys/util"
 	"github.com/ellcrys/patchain/cockroach/tables"
+	"github.com/ellcrys/util"
 )
 
 var (
@@ -106,7 +106,9 @@ func MakeChain(objects ...*tables.Object) {
 	}
 }
 
-// MakeGenesisPair creates two objects to be used as genesis object pairs
+// MakeGenesisPair creates two objects to be used as genesis object pairs.
+// The first object in the pair must have its PrevHash field set to the partition hash
+// in the format 'PartitionPrefix+PartitionHash'.
 func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*tables.Object {
 	pair := []*tables.Object{{
 		OwnerID:       ownerID,
@@ -114,7 +116,7 @@ func MakeGenesisPair(ownerID, creatorID, partitionID, partitionHash string) []*t
 		PartitionID:   partitionID,
 		Key:           "$genesis/1",
 		SchemaVersion: "1",
-		PrevHash:      partitionHash,
+		PrevHash:      PartitionPrefix + partitionHash,
 	}, {
 		OwnerID:       ownerID,
 		CreatorID:     creatorID,
