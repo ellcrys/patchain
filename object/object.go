@@ -75,7 +75,7 @@ func (o *Object) CreatePartitions(n int64, ownerID, creatorID string, options ..
 			partitions = append(partitions, newPartition)
 		}
 
-		// chain partitions with prefixed prev hash
+		// chain partitions
 		MakeChain(partitions...)
 
 		return partitions, o.db.TransactWithDB(dbTx, finish, func(dbTx patchain.DB, commit patchain.CommitFunc, rollback patchain.RollbackFunc) error {
@@ -203,9 +203,7 @@ func (o *Object) selectPartition(partitions []*tables.Object) *tables.Object {
 // indicates or requires a retry. This method can detect cockroach db
 // restart, retry error and prev hash contention
 func (o *Object) RequiresRetry(err error) bool {
-	return strings.Contains(err.Error(), "restart transaction") ||
-		strings.Contains(err.Error(), "retry transaction") ||
-		strings.Contains(err.Error(), `violates unique constraint "idx_name_prev_hash"`)
+	return strings.Contains(err.Error(), "restart transaction") || strings.Contains(err.Error(), "retry transaction") || strings.Contains(err.Error(), `violates unique constraint "idx_prev_hash"`)
 }
 
 // MustPut is the same as Put but it will retry the operation if it

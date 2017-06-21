@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/ellcrys/cocoon/core/common"
+	"github.com/ellcrys/gorm"
 	"github.com/ellcrys/patchain"
 	"github.com/ellcrys/patchain/cockroach/tables"
 	"github.com/ellcrys/util"
 	"github.com/fatih/structs"
 	"github.com/iancoleman/strcase"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres dialect
-	"github.com/jinzhu/inflection"
 	"github.com/ncodes/jsq"
 	logging "github.com/op/go-logging"
 	"github.com/pkg/errors"
@@ -28,12 +27,13 @@ type DB struct {
 	db               *gorm.DB
 	ConnectionString string
 	log              *logging.Logger
+	noLogging        bool
 }
 
 // NewDB creates a new DB db instance
-func NewDB() (_db *DB) {
-	_db = new(DB)
-	_db.log, _ = logging.GetLogger("patchain/cdb")
+func NewDB() (db *DB) {
+	db = new(DB)
+	db.log, _ = logging.GetLogger("patchain/cdb")
 	return
 }
 
@@ -78,6 +78,7 @@ func (c *DB) GetLogger() *logging.Logger {
 
 // NoLogging turns off logging for all log levels except CRITICAL logs
 func (c *DB) NoLogging() {
+	c.noLogging = true
 	if c.log != nil {
 		logging.SetLevel(logging.CRITICAL, c.log.Module)
 	}
@@ -104,36 +105,10 @@ func (c *DB) SetConn(conn interface{}) error {
 	return nil
 }
 
-// hasTable checks whether a table exists in the database.
-// Note: I could have used c.db.hasTable, but it turns out
-// postgres driver's implementation doesn't work with cockroach db
-func (c *DB) hasTable(tbl interface{}) bool {
-	var count int
-	c.db.CommonDB().QueryRow(
-		"SELECT count(*) FROM INFORMATION_SCHEMA.tables WHERE table_name = $1 AND table_schema = $2",
-		inflection.Plural(gorm.ToDBName(structs.New(tbl).Name())),
-		c.db.Dialect().CurrentDatabase()).Scan(&count)
-	return count > 0
-}
-
-// createTableIfNotExist if table does not exists. It will also add
-// new columns if not existing in the current table
-func (c *DB) createTableIfNotExist(tbl interface{}) error {
-	if c.hasTable(tbl) {
-		return nil
-	}
-	return c.db.CreateTable(tbl).Error
-}
-
 // CreateTables creates the tables required if they do not exists.
 // Returns nil if table already exists
 func (c *DB) CreateTables() error {
-
-	// create object table
-	if err := c.createTableIfNotExist(&tables.Object{}); err != nil {
-		return errors.Wrap(err, "failed to create tables")
-	}
-
+	c.db.AutoMigrate(&tables.Object{})
 	return nil
 }
 
@@ -161,7 +136,7 @@ func (c *DB) getDBTxFromOption(options []patchain.Option, fallback patchain.DB) 
 // Create creates a new record
 func (c *DB) Create(obj interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	return dbTx.GetConn().(*gorm.DB).Create(obj).Error
+	return dbTx.GetConn().(*gorm.DB).LogMode(!c.noLogging).Create(obj).Error
 }
 
 // CreateBulk creates more than one objects in a single transaction.
@@ -177,7 +152,7 @@ func (c *DB) CreateBulk(objs []interface{}, options ...patchain.Option) error {
 // UpdatePeerHash updates the peer hash of an object
 func (c *DB) UpdatePeerHash(obj interface{}, newPeerHash string, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	return dbTx.GetConn().(*gorm.DB).Model(obj).Update("peer_hash", newPeerHash).Error
+	return dbTx.GetConn().(*gorm.DB).LogMode(!c.noLogging).Model(obj).Update("peer_hash", newPeerHash).Error
 }
 
 // NewDB creates a new connection
@@ -235,7 +210,7 @@ func (c *DB) Rollback() error {
 // GetLast gets the last document that matches the query object
 func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	err := dbTx.GetConn().(*gorm.DB).Order("timestamp desc").Scopes(c.getQueryModifiers(q)...).Limit(1).Find(out).Error
+	err := dbTx.GetConn().(*gorm.DB).LogMode(!c.noLogging).Order("timestamp desc").Scopes(c.getQueryModifiers(q)...).Limit(1).Find(out).Error
 	if err != nil {
 		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
 			return patchain.ErrNotFound
@@ -248,7 +223,7 @@ func (c *DB) GetLast(q patchain.Query, out interface{}, options ...patchain.Opti
 // GetAll fetches all documents that match a query
 func (c *DB) GetAll(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
-	err := dbTx.GetConn().(*gorm.DB).Scopes(c.getQueryModifiers(q)...).Find(out).Error
+	err := dbTx.GetConn().(*gorm.DB).LogMode(!c.noLogging).Scopes(c.getQueryModifiers(q)...).Find(out).Error
 	if err != nil {
 		if common.CompareErr(err, gorm.ErrRecordNotFound) == 0 {
 			return patchain.ErrNotFound
@@ -262,6 +237,7 @@ func (c *DB) GetAll(q patchain.Query, out interface{}, options ...patchain.Optio
 func (c *DB) Count(q patchain.Query, out interface{}, options ...patchain.Option) error {
 	dbTx, _ := c.getDBTxFromOption(options, &DB{db: c.db})
 	return dbTx.GetConn().(*gorm.DB).
+		LogMode(!c.noLogging).
 		Scopes(c.getQueryModifiers(q)...).
 		Model(q).
 		Count(out).Error

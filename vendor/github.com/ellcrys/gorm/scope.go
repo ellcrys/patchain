@@ -1102,7 +1102,7 @@ func (scope *Scope) createTable() *Scope {
 			if strings.Contains(strings.ToLower(sqlTag), "primary key") {
 				primaryKeyInColumnType = true
 			}
-			
+
 			tags = append(tags, scope.Quote(field.DBName)+" "+sqlTag)
 		}
 

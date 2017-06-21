@@ -22,8 +22,8 @@ type Object struct {
 	Protected     bool                 `json:"protected" structs:"protected" mapstructure:"protected" gorm:"index:idx_protected"`
 	RefOnly       bool                 `json:"ref_only,omitempty" structs:"ref_only,omitempty" mapstructure:"ref_only,omitempty" gorm:"index:idx_ref_only"`
 	Timestamp     int64                `json:"timestamp,omitempty" structs:"timestamp,omitempty" mapstructure:"timestamp,omitempty" gorm:"index:idx_timestamp"`
-	PrevHash      string               `json:"prev_hash,omitempty" structs:"prev_hash,omitempty" mapstructure:"prev_hash,omitempty" gorm:"type:varchar(64);index:idx_prev_hash"`
-	PeerHash      string               `json:"peer_hash,omitempty" structs:"peer_hash,omitempty" mapstructure:"peer_hash,omitempty" gorm:"type:varchar(64);index:idx_peer_hash"`
+	PrevHash      string               `json:"prev_hash,omitempty" structs:"prev_hash,omitempty" mapstructure:"prev_hash,omitempty" gorm:"type:varchar(64);unique_index:idx_prev_hash"`
+	PeerHash      string               `json:"peer_hash,omitempty" structs:"peer_hash,omitempty" mapstructure:"peer_hash,omitempty" gorm:"type:varchar(64)"`
 	Hash          string               `json:"hash,omitempty" structs:"hash,omitempty" mapstructure:"hash,omitempty" gorm:"type:varchar(64);index:idx_hash"`
 	SchemaVersion string               `json:"schema_version,omitempty" structs:"schema_version,omitempty" mapstructure:"schema_version,omitempty" gorm:"type:varchar(64);index:idx_sch_ver"`
 	Ref1          string               `json:"ref1,omitempty" structs:"ref1,omitempty" mapstructure:"ref1,omitempty" gorm:"type:varchar(64);index:idx_ref1"`
